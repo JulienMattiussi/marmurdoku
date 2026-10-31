@@ -100,3 +100,55 @@ describe('Tooltip', () => {
     vi.useRealTimers()
   })
 })
+
+describe('Notes and undo', () => {
+  it('notes positions for the picked suspect, undoes and redoes them', async () => {
+    const { container } = render(App)
+    const notes = () => container.querySelectorAll('.notes .note').length
+    await fireEvent.click(screen.getByRole('button', { name: /^Karen/ }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Noter' }))
+    await fireEvent.click(cell(container, 'S8'))
+    await fireEvent.click(cell(container, 'S10'))
+    expect(notes()).toBe(2)
+    expect(screen.getByRole('button', { name: /^Karen/ })).toHaveTextContent('2 notes')
+    await fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+    expect(notes()).toBe(1)
+    await fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(notes()).toBe(0)
+    await fireEvent.click(screen.getByRole('button', { name: 'Refaire' }))
+    expect(notes()).toBe(1)
+  })
+})
+
+describe('Sauvegardes', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('saves the grid under a name, loads it back and deletes it, both after a yes', async () => {
+    const { container } = render(App)
+    await fireEvent.click(cell(container, 'S8'))
+    await fireEvent.click(screen.getByRole('button', { name: 'Sauvegardes' }))
+    await fireEvent.update(
+      screen.getByRole('textbox', { name: 'Nom de la sauvegarde' }),
+      'Ma piste',
+    )
+    await fireEvent.click(screen.getByRole('button', { name: 'Sauvegarder' }))
+    expect(screen.getByText('Ma piste')).toBeInTheDocument()
+    await fireEvent.click(screen.getByRole('button', { name: 'Fermer les sauvegardes' }))
+
+    await fireEvent.click(cell(container, 'S8'))
+    expect(container.querySelectorAll('.cross')).toHaveLength(0)
+    await fireEvent.click(screen.getByRole('button', { name: 'Sauvegardes' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Charger Ma piste' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Non' }))
+    expect(container.querySelectorAll('.cross')).toHaveLength(0)
+    await fireEvent.click(screen.getByRole('button', { name: 'Charger Ma piste' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Oui' }))
+    expect(container.querySelectorAll('.cross')).toHaveLength(1)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Sauvegardes' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Supprimer Ma piste' }))
+    expect(screen.getByText('Ma piste')).toBeInTheDocument()
+    await fireEvent.click(screen.getByRole('button', { name: 'Oui' }))
+    expect(screen.getByText('Aucune sauvegarde pour l’instant.')).toBeInTheDocument()
+  })
+})

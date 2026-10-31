@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { CLUES, GENERAL_CLUES } from '@/data/clues'
-import { avatarUrl, PEOPLE } from '@/data/people'
+import { avatarUrl, colorOf, inkOn, PEOPLE } from '@/data/people'
 import { ref } from 'vue'
+import GameToolbar from '@/components/GameToolbar.vue'
 import RulesDialog from '@/components/RulesDialog.vue'
 import { cellName } from '@/lib/geometry'
+import type { Mode } from '@/lib/game'
 import type { Cell } from '@/lib/grid'
 
 /**
@@ -13,58 +15,78 @@ import type { Cell } from '@/lib/grid'
 defineProps<{
   selected: string | null
   placements: Record<string, Cell>
+  /** Positions noted per suspect: their count shows on each card. */
+  notes: Record<string, string[]>
+  mode: Mode
   /** "Vérifier" stays greyed out until everyone is on the map. */
   canVerify: boolean
+  canUndo: boolean
+  canRedo: boolean
 }>()
 
 const emit = defineEmits<{
   select: [person: string]
   press: [person: string, event: PointerEvent]
   verify: []
+  mode: [mode: Mode]
+  undo: []
+  redo: []
+  saves: []
 }>()
 
 const showRules = ref(false)
 </script>
 
 <template>
-  <aside class="flex flex-col gap-4 lg:min-h-0" aria-labelledby="cast-title">
+  <aside class="short:gap-2.5 flex flex-col gap-4 lg:min-h-0" aria-labelledby="cast-title">
     <section
       class="paper relative -rotate-[0.6deg] rounded-sm px-4 py-2"
       aria-label="Ce que l’on sait"
     >
-      <h2 class="text-sm font-bold tracking-widest uppercase">Rapport d’enquête</h2>
-      <button
-        type="button"
-        class="border-ink/40 hover:border-blood hover:text-blood absolute right-3 bottom-2 rounded-sm border px-2 text-xs tracking-widest uppercase"
-        @click="showRules = true"
-      >
-        Règles
-      </button>
-      <span class="stamp bg-paper absolute -top-2.5 right-4">Confidentiel</span>
+      <div class="mb-1 flex items-center gap-3">
+        <h2 class="text-sm font-bold tracking-widest uppercase">Rapport d’enquête</h2>
+        <span class="stamp bg-paper">Confidentiel</span>
+        <button
+          type="button"
+          class="bg-ink text-tape hover:bg-blood hover:text-bone ml-auto flex items-center gap-1.5 rounded-sm px-3 py-0.5 text-sm font-bold tracking-widest uppercase shadow-md transition-colors"
+          @click="showRules = true"
+        >
+          <span
+            class="border-tape grid size-4 place-items-center rounded-full border text-[11px] leading-none"
+            aria-hidden="true"
+            >?</span
+          >
+          Règles
+        </button>
+      </div>
       <ul class="grid gap-x-6 text-[13px] leading-snug sm:grid-cols-2">
         <li v-for="clue in GENERAL_CLUES" :key="clue.text">— {{ clue.text }}</li>
       </ul>
     </section>
     <div class="flex items-center gap-4">
-      <h2 id="cast-title" class="font-horror text-blood-bright text-3xl leading-none">
+      <h2
+        id="cast-title"
+        class="font-horror text-blood-bright short:text-2xl text-3xl leading-none"
+      >
         Les suspects
       </h2>
-      <button
-        type="button"
-        class="bg-blood text-bone hover:bg-blood-bright rounded-sm px-4 py-1.5 font-bold tracking-widest uppercase shadow-lg transition-colors disabled:cursor-not-allowed disabled:bg-stone-600 disabled:text-stone-300 disabled:shadow-none"
-        :disabled="!canVerify"
-        @click="emit('verify')"
-      >
-        Vérifier
-      </button>
+      <GameToolbar
+        :mode="mode"
+        :can-verify="canVerify"
+        :can-undo="canUndo"
+        :can-redo="canRedo"
+        @verify="emit('verify')"
+        @mode="emit('mode', $event)"
+        @undo="emit('undo')"
+        @redo="emit('redo')"
+        @saves="emit('saves')"
+      />
     </div>
-    <ul
-      class="grid grid-cols-2 gap-3 p-1 sm:grid-cols-3 lg:min-h-0 lg:overflow-y-auto xl:grid-cols-3"
-    >
+    <ul class="short:gap-1 grid grid-cols-2 gap-2 p-1 sm:grid-cols-3 lg:min-h-0 lg:overflow-y-auto">
       <li v-for="person in PEOPLE" :key="person.id">
         <button
           type="button"
-          class="paper flex h-full w-full touch-none items-center gap-2 rounded-sm px-2 py-1.5 text-left transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
+          class="paper short:py-0.5 flex h-full w-full touch-none items-center gap-2 rounded-sm px-2 py-1 text-left transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
           :class="{ 'ring-blood-bright -rotate-1 ring-4': selected === person.id }"
           :aria-pressed="selected === person.id"
           @click="emit('select', person.id)"
@@ -74,12 +96,25 @@ const showRules = ref(false)
             :src="avatarUrl(person.id)"
             alt=""
             draggable="false"
-            class="size-11 shrink-0"
+            class="size-9 shrink-0"
             :class="{ 'opacity-35 grayscale': placements[person.id] }"
           />
-          <span class="flex min-w-0 flex-col leading-tight">
-            <span class="truncate font-bold">
-              {{ person.name }}
+          <span class="short:gap-0.5 flex min-w-0 flex-col gap-1 leading-tight">
+            <span class="truncate text-sm font-bold">
+              <!-- The name on the suspect's color: the legend of their notes on the map. -->
+              <span
+                class="inline-flex h-[1.45em] items-center rounded-full px-2 pt-[0.12em] leading-none"
+                :style="{ backgroundColor: colorOf(person.id), color: inkOn(person.id) }"
+                >{{ person.name }}</span
+              >
+              <span
+                v-if="!placements[person.id] && notes[person.id]?.length"
+                class="ml-1 text-xs font-normal"
+                :class="notes[person.id]!.length === 1 ? 'text-blood font-bold' : 'opacity-70'"
+                :title="notes[person.id]!.length === 1 ? 'Une seule position notée' : undefined"
+              >
+                · {{ notes[person.id]!.length }} note{{ notes[person.id]!.length > 1 ? 's' : '' }}
+              </span>
               <span
                 v-if="placements[person.id]"
                 class="bg-blood text-bone ml-1 inline-flex h-[1.35em] items-center rounded-sm px-1 pt-[0.15em] align-[0.1em] text-xs leading-none"
@@ -87,7 +122,11 @@ const showRules = ref(false)
                 {{ cellName(placements[person.id]!) }}
               </span>
             </span>
-            <span v-for="clue in CLUES[person.id]" :key="clue.text" class="text-xs opacity-80">
+            <span
+              v-for="clue in CLUES[person.id]"
+              :key="clue.text"
+              class="text-[11px] leading-tight opacity-80"
+            >
               {{ clue.text }}
             </span>
           </span>

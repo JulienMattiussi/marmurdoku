@@ -1,21 +1,29 @@
-import { distanceTo, isAwayFromWalls, isInCorner, isNear, type Board } from '@/lib/board'
+import { distanceTo, isAwayFromWalls, isInCorner, isNear, neighbors, type Board } from '@/lib/board'
 import type { FurnitureKind } from '@/lib/furniture'
-import type { Cell, Zone } from '@/lib/grid'
+import type { Cell, FloorKind, Zone } from '@/lib/grid'
 
 /** A rule about one person, the subject of the clue. Rows and columns count from 0. */
 export type PersonRule =
   | { type: 'inZone'; zones: string[] }
+  /** "Either… or…": at least one of these rules holds. */
+  | { type: 'anyOf'; rules: PersonRule[] }
   | { type: 'notInZone'; zones: string[] }
+  /** Standing on one of these floors ("on carpet"). */
+  | { type: 'onFloor'; floors: FloorKind[] }
   | { type: 'onFurniture'; kinds: FurnitureKind[] }
   | { type: 'notOnFurniture'; kinds: FurnitureKind[] }
   | { type: 'nearFurniture'; kinds: FurnitureKind[] }
   | { type: 'notNearFurniture'; kinds: FurnitureKind[] }
+  /** Near one of these pieces with nobody on it ("next to an empty chair"). */
+  | { type: 'nearEmpty'; kinds: FurnitureKind[] }
   | { type: 'alone' }
   | { type: 'notAlone' }
   /** Shares the room with exactly `count` other people, all of them in `among`. */
   | { type: 'roomWith'; count: number; among: string[] }
   | { type: 'sameZoneAs'; person: string }
   | { type: 'columnGap'; person: string; gap: number }
+  /** In a column to the right of this person's (further from column A). */
+  | { type: 'rightOf'; person: string }
   /** On a row above this person's (closer to row 1); exactly `rows` above if given. */
   | { type: 'above'; person: string; rows?: number }
   | { type: 'inCorner' }
@@ -71,8 +79,17 @@ export const personRuleStatus = (
   const complete = everyone.every((id) => placements[id])
   const kinds = board.kinds[cell.row]![cell.col]!
   switch (rule.type) {
+    case 'anyOf': {
+      const statuses = rule.rules.map((r) =>
+        personRuleStatus(r, person, placements, board, everyone),
+      )
+      if (statuses.includes('ok')) return 'ok'
+      return statuses.every((s) => s === 'broken') ? 'broken' : 'open'
+    }
     case 'inZone':
       return verdict(rule.zones.includes(zoneAt(board, cell).id))
+    case 'onFloor':
+      return verdict(rule.floors.includes(zoneAt(board, cell).floor))
     case 'notInZone':
       return verdict(!rule.zones.includes(zoneAt(board, cell).id))
     case 'onFurniture':
@@ -83,6 +100,17 @@ export const personRuleStatus = (
       return verdict(isNear(board, cell, rule.kinds))
     case 'notNearFurniture':
       return verdict(!isNear(board, cell, rule.kinds))
+    case 'nearEmpty': {
+      const zone = zoneAt(board, cell)
+      const empty = neighbors(cell, board.size).filter(
+        (n) =>
+          zoneAt(board, n) === zone &&
+          board.kinds[n.row]![n.col]!.some((kind) => rule.kinds.includes(kind)) &&
+          !Object.values(placements).some((c) => c.row === n.row && c.col === n.col),
+      )
+      if (!empty.length) return 'broken'
+      return complete ? 'ok' : 'open'
+    }
     case 'alone':
       if (sharesZone(board, placements, person, zoneAt(board, cell))) return 'broken'
       return complete ? 'ok' : 'open'
@@ -103,6 +131,10 @@ export const personRuleStatus = (
     case 'columnGap': {
       const other = placements[rule.person]
       return other ? verdict(Math.abs(other.col - cell.col) === rule.gap) : 'open'
+    }
+    case 'rightOf': {
+      const other = placements[rule.person]
+      return other ? verdict(cell.col > other.col) : 'open'
     }
     case 'above': {
       const other = placements[rule.person]
@@ -159,25 +191,21 @@ export const globalRuleStatus = (
   }
 }
 
-/** The murder itself: the murderer is the only person with the victim. */
-export const murderStatus = (
-  victim: string,
-  murderer: string,
+/**
+ * The murder, as the player knows it: "the culprit was alone in a zone with
+ * the victim", so at least one zone holds exactly two people. Who the victim
+ * and the culprit are is never used: the player does not know it.
+ */
+export const crimeSceneStatus = (
   placements: Placements,
   board: Board,
   everyone: string[],
 ): RuleStatus => {
-  const victimCell = placements[victim]
-  const murdererCell = placements[murderer]
-  if (victimCell && murdererCell && zoneAt(board, victimCell) !== zoneAt(board, murdererCell)) {
-    return 'broken'
+  if (!everyone.every((id) => placements[id])) return 'open'
+  const counts = new Map<Zone, number>()
+  for (const cell of Object.values(placements)) {
+    const zone = zoneAt(board, cell)
+    counts.set(zone, (counts.get(zone) ?? 0) + 1)
   }
-  const crimeScene = victimCell ?? murdererCell
-  if (!crimeScene) return 'open'
-  const zone = zoneAt(board, crimeScene)
-  const witness = Object.entries(placements).some(
-    ([id, cell]) => id !== victim && id !== murderer && zoneAt(board, cell) === zone,
-  )
-  if (witness) return 'broken'
-  return everyone.every((id) => placements[id]) ? 'ok' : 'open'
+  return verdict([...counts.values()].includes(2))
 }

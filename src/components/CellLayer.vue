@@ -20,6 +20,8 @@ const props = defineProps<{
   hoverCell: Cell | null
   /** Cell of the picked person, if they are on the map. */
   selectedCell: Cell | null
+  /** What a click does, shown by the cursor over the cells. */
+  effect: 'place' | 'note' | 'cross'
 }>()
 
 const emit = defineEmits<{
@@ -112,7 +114,7 @@ const onPress = (target: (typeof targets)[number], event: PointerEvent) => {
     :width="CELL"
     :height="CELL"
     class="target"
-    :class="{ 'target--free': target.free }"
+    :class="target.free ? ['target--free', `target--${effect}`] : []"
     @click="onClick(target)"
     @pointerdown="onPress(target, $event)"
     @pointerenter="scheduleTip(target.name)"
@@ -136,8 +138,26 @@ const onPress = (target: (typeof targets)[number], event: PointerEvent) => {
   fill: transparent;
 }
 .target--free {
-  cursor: pointer;
   touch-action: none;
+}
+/* The cursor tells what a click will do: place (solid pencil), note (dotted pencil), cross. */
+.target--place {
+  cursor:
+    url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M17 2.5l4.5 4.5-12.5 12.5-6 1.5 1.5-6z%27 fill=%27%231b1e26%27 stroke=%27%23f2c418%27 stroke-width=%271.5%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E')
+      3 21,
+    pointer;
+}
+.target--note {
+  cursor:
+    url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M17 2.5l4.5 4.5-12.5 12.5-6 1.5 1.5-6z%27 fill=%27%23fff%27 fill-opacity=%270.85%27 stroke=%27%231b1e26%27 stroke-width=%271.6%27 stroke-dasharray=%272.5 2%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E')
+      3 21,
+    pointer;
+}
+.target--cross {
+  cursor:
+    url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M5 5l14 14M19 5L5 19%27 stroke=%27%23fff%27 stroke-width=%276%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M5 5l14 14M19 5L5 19%27 stroke=%27%23b0121e%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E')
+      12 12,
+    crosshair;
 }
 .target--free:hover {
   fill: rgb(255 255 255 / 18%);

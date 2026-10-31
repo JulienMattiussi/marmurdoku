@@ -2,19 +2,15 @@
 import { computed, ref } from 'vue'
 import BloodDrip from '@/components/BloodDrip.vue'
 import CastPanel from '@/components/CastPanel.vue'
+import SavesDialog from '@/components/SavesDialog.vue'
 import OfficeMap from '@/components/OfficeMap.vue'
 import VerdictOverlay from '@/components/VerdictOverlay.vue'
+import { useGame } from '@/composables/useGame'
 import { usePersonDrag } from '@/composables/usePersonDrag'
+import { useSaves } from '@/composables/useSaves'
 import { avatarUrl } from '@/data/people'
-import {
-  clickCell,
-  dropPerson,
-  emptyGame,
-  isSolved,
-  toggleSelection,
-  type GameState,
-} from '@/lib/game'
-import { cellName } from '@/lib/geometry'
+import { emptyGame } from '@/lib/game'
+import type { Save } from '@/lib/saves'
 import type { Cell } from '@/lib/grid'
 import { puzzleStatus } from '@/lib/solver'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
@@ -25,50 +21,35 @@ if (debug && puzzleStatus(PUZZLE, SOLUTION_PLACEMENTS) !== 'ok') {
   console.warn('La solution ne respecte pas tous les indices')
 }
 
-const game = ref<GameState>(
+const game = useGame(
+  PUZZLE,
   debug ? { ...emptyGame(), placements: { ...SOLUTION_PLACEMENTS } } : emptyGame(),
 )
+const drag = usePersonDrag(game.drop)
 
-/** After "Vérifier": a wrong guess shows for a moment, a solved case stays and ends the game. */
-const verdict = ref<'solved' | 'wrong' | null>(null)
-const over = computed(() => verdict.value === 'solved')
-const WRONG_MESSAGE_MS = 2500
-
-const everyonePlaced = computed(() => PUZZLE.people.every((id) => game.value.placements[id]))
-const verify = () => {
-  if (isSolved(PUZZLE, game.value.placements)) {
-    verdict.value = 'solved'
-    return
-  }
-  verdict.value = 'wrong'
-  setTimeout(() => (verdict.value = null), WRONG_MESSAGE_MS)
+const saves = useSaves()
+const showSaves = ref(false)
+const loadSave = (save: Save) => {
+  game.load(save.state)
+  showSaves.value = false
 }
 
-const drag = usePersonDrag((person, cell) => {
-  if (!over.value) game.value = dropPerson(game.value, person, cell)
-})
-
-const occupantOf = (cell: Cell) =>
-  Object.keys(game.value.placements).find(
-    (id) => cellName(game.value.placements[id]!) === cellName(cell),
-  )
-
 const selectedCell = computed(() =>
-  game.value.selected ? (game.value.placements[game.value.selected] ?? null) : null,
+  game.selected.value ? (game.state.value.placements[game.selected.value] ?? null) : null,
 )
 
 const onCellClick = (cell: Cell) => {
-  if (!over.value && !drag.wasDragging()) game.value = clickCell(game.value, cell)
+  if (!drag.wasDragging()) game.click(cell)
 }
 const onCellPress = (cell: Cell, event: PointerEvent) => {
-  const occupant = occupantOf(cell)
-  if (occupant && !over.value) drag.press(occupant, event)
+  const occupant = game.occupantOf(cell)
+  if (occupant && !game.over.value) drag.press(occupant, event)
 }
 const onSelect = (person: string) => {
-  if (!over.value && !drag.wasDragging()) game.value = toggleSelection(game.value, person)
+  if (!drag.wasDragging()) game.select(person)
 }
 const onPress = (person: string, event: PointerEvent) => {
-  if (!over.value) drag.press(person, event)
+  if (!game.over.value) drag.press(person, event)
 }
 </script>
 
@@ -78,19 +59,22 @@ const onPress = (person: string, event: PointerEvent) => {
     <div class="relative lg:h-full lg:max-w-[50%] lg:shrink-0">
       <OfficeMap
         class="h-auto w-full lg:h-full lg:w-auto lg:max-w-full"
-        :placements="game.placements"
-        :crosses="game.crosses"
+        :placements="game.state.value.placements"
+        :crosses="game.state.value.crosses"
+        :notes="game.state.value.notes"
+        :selected="game.selected.value"
+        :effect="game.effect.value"
         :hover-cell="drag.hoverCell.value"
         :selected-cell="selectedCell"
         :show-blocked="debug"
         @cell-click="onCellClick"
         @cell-press="onCellPress"
       />
-      <VerdictOverlay v-if="verdict" :verdict="verdict" />
+      <VerdictOverlay v-if="game.verdict.value" :verdict="game.verdict.value" />
     </div>
     <div class="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
-      <header class="flex flex-col gap-3">
-        <div class="crime-tape -mx-4 -mt-4 -rotate-1 py-1.5 shadow-lg lg:-mt-2">
+      <header class="short:gap-2 flex flex-col gap-3">
+        <div class="crime-tape short:hidden -mx-4 -mt-4 -rotate-1 py-1.5 shadow-lg lg:-mt-2">
           <p
             class="crime-tape__text mx-auto w-fit px-3 text-sm font-bold tracking-[0.3em] uppercase"
           >
@@ -100,13 +84,13 @@ const onPress = (person: string, event: PointerEvent) => {
         <div class="flex flex-wrap items-start gap-x-6 gap-y-2">
           <div class="w-fit shrink-0">
             <h1
-              class="font-horror text-blood-bright text-6xl leading-none drop-shadow-[0_3px_0_#000]"
+              class="font-horror text-blood-bright short:text-5xl text-6xl leading-none drop-shadow-[0_3px_0_#000]"
             >
               Marmerdoku
             </h1>
-            <BloodDrip class="text-blood-bright -mt-1 h-7 w-full" />
+            <BloodDrip class="text-blood-bright short:h-5 -mt-1 h-7 w-full" />
           </div>
-          <p class="min-w-0 flex-1 basis-64 text-base leading-snug">
+          <p class="short:text-sm min-w-0 flex-1 basis-64 text-base leading-snug">
             <span class="text-tape">Meurtre chez Marmelab.</span>
             Quelqu’un a été retrouvé sans vie dans les bureaux. Place chaque suspect, un par ligne
             et par colonne, et démasque le coupable.
@@ -114,14 +98,30 @@ const onPress = (person: string, event: PointerEvent) => {
         </div>
       </header>
       <CastPanel
-        :selected="game.selected"
-        :placements="game.placements"
-        :can-verify="everyonePlaced && !over"
+        :selected="game.selected.value"
+        :placements="game.state.value.placements"
+        :notes="game.state.value.notes"
+        :mode="game.mode.value"
+        :can-verify="game.everyonePlaced.value && !game.over.value"
+        :can-undo="game.canUndo.value"
+        :can-redo="game.canRedo.value"
         @select="onSelect"
         @press="onPress"
-        @verify="verify"
+        @verify="game.verify"
+        @mode="game.mode.value = $event"
+        @undo="game.undo"
+        @redo="game.redo"
+        @saves="showSaves = true"
       />
     </div>
+    <SavesDialog
+      v-if="showSaves"
+      :saves="saves.saves.value"
+      @save="saves.save($event, game.state.value)"
+      @load="loadSave"
+      @remove="saves.remove"
+      @close="showSaves = false"
+    />
     <img
       v-if="drag.dragged.value"
       :src="avatarUrl(drag.dragged.value.person)"

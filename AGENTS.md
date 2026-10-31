@@ -47,6 +47,9 @@ src/
 │   ├── FloorPatterns.vue     # Motifs SVG des sols (un par FloorKind) et ombre portée
 │   ├── FurniturePiece.vue    # Place un meuble sur la grille, l'oriente, choisit son sprite
 │   ├── PeopleLayer.vue       # Avatars sur leurs cases, halo blanc qui suit leur contour
+│   ├── GameToolbar.vue       # Vérifier, Placer / Noter, annuler / refaire, Sauvegardes
+│   ├── SavesDialog.vue       # Fenêtre des sauvegardes : nommer, charger, supprimer
+│   ├── NotesLayer.vue        # Positions notées : initiale sur la couleur du suspect, 3x3 par case
 │   ├── CellLayer.vue         # Couche du joueur : croix, survol, sélection, infobulle, cibles de clic et de dépôt (data-cell)
 │   ├── BloodDrip.vue         # Coulure de sang sous le titre
 │   ├── VerdictOverlay.vue    # Message de fin devant la carte : « Affaire classée » ou « Raté ! »
@@ -54,6 +57,8 @@ src/
 │   ├── CastPanel.vue         # « (02) Les personnages » : les 20 avatars, à droite de la carte
 │   └── furniture/            # Sprites SVG : sièges, tables et revêtements, décor
 ├── composables/
+│   ├── useGame.ts            # La partie : historique, sélection, mode, verdict, raccourcis
+│   ├── useSaves.ts           # Sauvegardes nommées, dans le localStorage
 │   └── usePersonDrag.ts      # Glisser un personnage (souris ou tactile) vers une case
 ├── data/
 │   ├── zones.ts              # Les 14 zones : code de grille, nom, sol, étage
@@ -69,7 +74,10 @@ src/
 │   ├── board.ts              # Plateau pour les règles : zones, cases plaçables, meubles par case, « près de »
 │   ├── rules.ts              # Règles des indices (par personne, globales, meurtre) : ok / enfreinte / ouverte
 │   ├── solver.ts             # Vérifie un placement complet (puzzleStatus), cherche les solutions (solve)
-│   ├── game.ts               # État du joueur et ses actions : sélection, clic sur une case, dépôt
+│   ├── difficulty.ts         # Joueur simulé : lecture simple, cases possibles placement après placement
+│   ├── game.ts               # État du joueur et ses coups : clic (placer, croix, noter), dépôt, verdict
+│   ├── history.ts            # Annuler / refaire sur des états immuables
+│   ├── saves.ts              # Liste des sauvegardes : ajout, retrait, lecture tolérante
 │   └── geometry.ts           # Taille d'une case, lettres des colonnes
 ├── puzzle.ts                 # Le niveau assemblé depuis data/ (plateau, personnages, indices, solution)
 ├── App.vue                   # La page
@@ -115,6 +123,9 @@ tests/
   défiler : la carte seule à droite, sur toute la hauteur (sa largeur suit,
   elle est carrée, au plus la moitié de l'écran) ; à gauche, le titre et le
   panneau des personnages, qui défile seul si besoin.
+- Fenêtres peu hautes (variante `short:`, hauteur ≤ 820px, dans `index.css`) :
+  le ruban disparaît, titre, sous-titre et liste des suspects se resserrent,
+  pour que les 20 fiches tiennent sans défiler (vérifié en 1366x768).
 - En dessous, tout s'empile et la page défile normalement.
 
 ## Solution et mode debug
@@ -139,6 +150,30 @@ tests/
   et les meubles qui s'y trouvent (libellés de `FURNITURE_KINDS`).
 - Seules les cases plaçables acceptent clics et dépôts. La logique est pure
   (`lib/game.ts`, testée) ; le glisser passe par les événements pointeur.
+- **Mode Placer / Noter** (`GameToolbar.vue`) : en mode Noter, un clic note
+  ou retire une position possible du suspect sélectionné ; les notes
+  s'affichent en pastilles dans les cases : l'initiale en blanc sur la
+  couleur du suspect (`colorOf`, `initialOf`, `inkOn` pour un texte foncé
+  sur les couleurs claires, dans `data/people.ts` ; sur sa fiche, son nom est
+  écrit dans une bulle de la même couleur), jamais estompées ; leur nombre sur la fiche. Les
+  couleurs sont choisies à la main : à initiale commune (4 A, 4 J, 2 G, 2 M,
+  2 T), familles de couleur nettement différentes. Le joueur seul les écrit : le jeu ne calcule rien pour lui.
+  Placer quelqu'un efface les notes des autres sur sa ligne et sa colonne,
+  dans le même coup (non désactivable).
+  Une croix efface toutes les notes de sa case, dans le même coup.
+- **Curseur sur la grille** : il dit ce que fera le clic (`clickEffect`) :
+  crayon plein pour placer, crayon en pointillés pour noter, croix rouge
+  quand personne n'est sélectionné.
+- **Annuler / refaire** : un seul historique pour tous les coups (placements,
+  croix, notes), `lib/history.ts` ; boutons ↶ ↷, Ctrl+Z, Ctrl+Y ou
+  Ctrl+Maj+Z. La sélection n'en fait pas partie. L'état de partie vit dans
+  `composables/useGame.ts`.
+- **Sauvegardes** (`SavesDialog.vue`) : enregistrer la grille (placements,
+  croix, notes) sous un nom (par défaut « Partie du … »), puis charger ou
+  supprimer depuis la liste, chacun après un « Oui » sur la ligne. Stockées dans le localStorage du navigateur
+  (`composables/useSaves.ts`, lecture tolérante dans `lib/saves.ts`) : sans
+  stockage, elles ne vivent que le temps de la session. Charger est un coup,
+  que ↶ annule.
 - **Vérifier** (à droite de « Les suspects ») : grisé tant que tout le monde
   n'est pas placé. Le verdict (`isSolved`) juge sur les règles, pas sur
   `data/solution.ts` : toute solution que les indices permettent gagne.
@@ -158,8 +193,16 @@ tests/
   route). Quelques dizaines de millisecondes sur le niveau.
 - `make solve` (`tools/solve.test.ts`, hors `make test`) : dit si les indices
   ne mènent qu'à `data/solution.ts` ; sinon, montre une autre solution valide,
-  personne par personne, par rapport à `data/solution.ts`. À relancer après
-  chaque nouvel indice.
+  personne par personne, par rapport à `data/solution.ts`. Si la solution est
+  unique, retire chaque règle tour à tour et liste celles dont l'absence la
+  laisse unique (règles superflues, une par une : pas forcément toutes
+  ensemble). À relancer après chaque nouvel indice.
+- `make solve` mesure aussi la difficulté (`lib/difficulty.ts`) : la lecture
+  simple d'un joueur sans essai (`analyze`), et l'évolution des cases
+  possibles placement après placement (`rounds`), avec min / médiane / max et
+  un score d'ouverture (somme des log2 du minimum, par tiers).
+- `tests/unit/solver.test.ts` garantit l'unicité : une retouche du plan ou des
+  indices qui ouvre une autre solution fait échouer `make test`.
 - Règles de vocabulaire des indices : en tête de `data/clues.ts`, répétées
   au joueur dans `RulesDialog.vue` (les garder alignées). « Près de » ne
   traverse pas les murs : la case voisine doit être dans la même pièce

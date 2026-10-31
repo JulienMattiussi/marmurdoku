@@ -7,6 +7,9 @@
  * evidence files on old paper. Creepster for the shouting, Special Elite
  * (typewriter) for everything the investigation writes down.
  */
+/* Windows of laptop height: the page squeezes its header so the cast fits without scrolling. */
+@custom-variant short (@media (max-height: 820px));
+
 @theme {
   --color-night: #140b0d;
   --color-bone: #efe3cc;

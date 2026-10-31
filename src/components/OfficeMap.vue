@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import CellLayer from '@/components/CellLayer.vue'
 import FloorPatterns from '@/components/FloorPatterns.vue'
 import FurniturePiece from '@/components/FurniturePiece.vue'
+import NotesLayer from '@/components/NotesLayer.vue'
 import PeopleLayer from '@/components/PeopleLayer.vue'
 import { FURNITURE, ZONE_GRID } from '@/data/office'
 import { ZONES } from '@/data/zones'
@@ -16,6 +17,12 @@ const props = defineProps<{
   /** People on the map, by id. */
   placements: Record<string, Cell>
   crosses: string[]
+  /** Positions noted per suspect, drawn as small avatars. */
+  notes: Record<string, string[]>
+  /** The picked suspect: their notes stand out. */
+  selected: string | null
+  /** What a click on a cell does: sets the cursor. */
+  effect: 'place' | 'note' | 'cross'
   hoverCell: Cell | null
   selectedCell: Cell | null
   /** Debug: hatch the cells where nobody can stand. */
@@ -156,6 +163,7 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
       <text :x="label.x" :y="label.y">{{ label.name }}</text>
     </g>
 
+    <NotesLayer :notes="notes" :placements="placements" :selected="selected" />
     <PeopleLayer :placements="placements" />
 
     <CellLayer
@@ -165,6 +173,7 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
       :crosses="crosses"
       :hover-cell="hoverCell"
       :selected-cell="selectedCell"
+      :effect="effect"
       @click="emit('cellClick', $event)"
       @press="(cell, event) => emit('cellPress', cell, event)"
     />

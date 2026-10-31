@@ -8,9 +8,9 @@ export const parseCellName = (name: string): Cell => {
 }
 
 /**
- * Every rule a solution breaks, in French, ready to show in debug mode: one
- * person per row and per column, only on placeable cells, and the murderer
- * alone with the victim in their room.
+ * Authoring check of data/solution.ts, in French: one person per row and per
+ * column, only on placeable cells, and the story holds (the murderer alone
+ * with the victim in their room). Knows who did it, so the solver never uses it.
  */
 export const solutionProblems = (
   placements: Record<string, Cell>,

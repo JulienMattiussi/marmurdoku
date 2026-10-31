@@ -23,13 +23,11 @@ describe('solve', () => {
       [],
     ),
     people: ['victim', 'murderer'],
-    victim: 'victim',
-    murderer: 'murderer',
     clues,
     general: [],
   })
 
-  it('finds no solution when the murderer cannot share the victim’s room', () => {
+  it('finds no solution when no zone can hold exactly two people', () => {
     expect(solve(tiny({}))).toEqual([])
   })
 

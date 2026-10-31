@@ -61,8 +61,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           zone. On n’est jamais près de quelque chose à travers un mur.
         </li>
         <li>« Avec quelqu’un » : dans la même zone. « Seul » : seul dans sa zone.</li>
-        <li>« Plus loin », « plus près » : à vol d’oiseau, de centre de case à centre de case.</li>
         <li>Une zone « en hauteur » est à l’étage : la Mezzanine ou l’Aquarium.</li>
+        <li>« Assis » peut être sur une chaise, un tabouret ou un canapé.</li>
       </ul>
 
       <h3 class="font-bold tracking-widest uppercase">Les commandes</h3>
@@ -73,7 +73,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         <li>
           On peut aussi glisser un suspect jusqu’à une case : il remplace ce qui s’y trouvait.
         </li>
-        <li>Quand tout le monde est placé, « Vérifier » rend le verdict.</li>
       </ul>
     </section>
   </div>

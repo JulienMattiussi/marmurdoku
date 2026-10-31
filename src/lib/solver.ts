@@ -2,7 +2,7 @@ import { isNear, type Board } from '@/lib/board'
 import type { Cell } from '@/lib/grid'
 import {
   globalRuleStatus,
-  murderStatus,
+  crimeSceneStatus,
   personRuleStatus,
   type Clue,
   type GlobalRule,
@@ -13,17 +13,15 @@ import {
 export interface Puzzle {
   board: Board
   people: string[]
-  victim: string
-  murderer: string
   clues: Record<string, Clue<PersonRule>[]>
   general: Clue<GlobalRule>[]
 }
 
 /** Every rule of the puzzle on these placements: broken wins over open, open over ok. */
 export const puzzleStatus = (puzzle: Puzzle, placements: Placements) => {
-  const { board, people, victim, murderer, clues, general } = puzzle
+  const { board, people, clues, general } = puzzle
   const statuses = [
-    murderStatus(victim, murderer, placements, board, people),
+    crimeSceneStatus(placements, board, people),
     ...general.flatMap(({ rules }) =>
       rules.map((rule) => globalRuleStatus(rule, placements, board, people)),
     ),
@@ -69,6 +67,37 @@ const hasMatching = (lines: number[][]) => {
 }
 
 /**
+ * The cells each person can stand on, judged by their own clues alone (and
+ * the general clues about them), before anyone is placed.
+ */
+export const ownCells = (puzzle: Puzzle): Map<string, Cell[]> => {
+  const { board, people, clues } = puzzle
+  const globalRules = puzzle.general.flatMap(({ rules }) => rules)
+  return new Map(
+    people.map((id) => {
+      const rules = [
+        ...(clues[id] ?? []).flatMap((clue) => clue.rules),
+        ...globalRules.flatMap((rule) =>
+          rule.type === 'person' && rule.person === id ? [rule.rule] : [],
+        ),
+      ]
+      const cells: Cell[] = []
+      for (let row = 0; row < board.size; row++) {
+        for (let col = 0; col < board.size; col++) {
+          if (!board.placeable[row]![col]) continue
+          const alone = { [id]: { row, col } }
+          const fits = rules.every(
+            (rule) => personRuleStatus(rule, id, alone, board, people) !== 'broken',
+          )
+          if (fits) cells.push({ row, col })
+        }
+      }
+      return [id, cells]
+    }),
+  )
+}
+
+/**
  * Finds solutions, at most `limit` of them and until `deadline` (a
  * performance.now() time): one person per row and per column, on placeable
  * cells, every rule holding. Two are enough to tell that the clues are not
@@ -78,12 +107,12 @@ const hasMatching = (lines: number[][]) => {
  * places the person with the fewest cells left, and cuts a branch as soon as:
  * someone has no cell left; the remaining people can no longer each get a row
  * and a column of their own; a room rule (alone, with exactly N people, not
- * alone, the murder) can no longer hold; or a counting clue (rooms left empty,
+ * alone) can no longer hold; or a counting clue (rooms left empty,
  * people near something) can no longer reach its count. Every complete
  * placement is checked against all the rules (puzzleStatus).
  */
 export const solve = (puzzle: Puzzle, limit = 2, deadline = Infinity): Placements[] => {
-  const { board, people, clues, victim, murderer } = puzzle
+  const { board, people, clues } = puzzle
   const size = board.size
   const n = people.length
   const index = new Map(people.map((id, i) => [id, i]))
@@ -102,18 +131,8 @@ export const solve = (puzzle: Puzzle, limit = 2, deadline = Infinity): Placement
     ),
   ])
 
-  const domains = people.map((id, p) => {
-    const cells: number[] = []
-    for (let cell = 0; cell < size * size; cell++) {
-      if (!board.placeable[rowOf(cell)]![colOf(cell)]) continue
-      const alone = { [id]: toCell(cell) }
-      const fits = rulesOf[p]!.every(
-        (rule) => personRuleStatus(rule, id, alone, board, people) !== 'broken',
-      )
-      if (fits) cells.push(cell)
-    }
-    return cells
-  })
+  const own = ownCells(puzzle)
+  const domains = people.map((id) => own.get(id)!.map(({ row, col }) => row * size + col))
 
   const links: Links[] = people.map(() => ({
     alone: false,
@@ -149,7 +168,6 @@ export const solve = (puzzle: Puzzle, limit = 2, deadline = Infinity): Placement
       }
     }
   })
-  const pair = new Set([index.get(victim)!, index.get(murderer)!])
   const nearRules = globalRules.flatMap((rule) =>
     rule.type === 'nearCount'
       ? [
@@ -183,17 +201,11 @@ export const solve = (puzzle: Puzzle, limit = 2, deadline = Infinity): Placement
     if (here.length >= (zoneLimits.get(zone) ?? Infinity)) return false
     for (const q of here) {
       if (links[q]!.alone) return false
-      if (pair.has(q) !== pair.has(p)) return false
       const company = links[q]!.roomWith
       if (company && (!company.among.has(p) || here.length > company.count)) return false
     }
     const own = links[p]!.roomWith
     if (own && (here.length >= own.count + 1 || here.some((q) => !own.among.has(q)))) return false
-    if (pair.has(p)) {
-      for (const q of pair) {
-        if (q !== p && position[q]! >= 0 && zoneOfCell[position[q]!] !== zone) return false
-      }
-    }
     for (const q of links[p]!.sameZone) {
       if (position[q]! >= 0 && zoneOfCell[position[q]!] !== zone) return false
     }
@@ -241,17 +253,6 @@ export const solve = (puzzle: Puzzle, limit = 2, deadline = Infinity): Placement
       if (links[p]!.company && !others && !reachable(zone)) return
       const own = links[p]!.roomWith
       if (own && others < own.count && reachable(zone, own.among) < own.count - others) return
-    }
-    if (pair.size === 2) {
-      const placedPair = [...pair].filter((p) => position[p]! >= 0)
-      if (placedPair.length === 1) {
-        const zone = zoneOfCell[position[placedPair[0]!]!]!
-        const partner = [...pair].find((p) => position[p]! < 0)!
-        if (!options[left.indexOf(partner)]!.some((c) => zoneOfCell[c] === zone)) return
-      }
-    }
-    for (const [zone, count] of zoneLimits) {
-      if (count - occupants[zone]!.length > reachable(zone)) return
     }
     // Counting clues.
     const occupied = occupants.filter((list) => list.length).length

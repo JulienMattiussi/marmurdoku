@@ -1,37 +1,52 @@
-import { clickCell, dropPerson, emptyGame, isSolved, toggleSelection } from '@/lib/game'
+import { clickCell, clickEffect, dropPerson, emptyGame, isSolved } from '@/lib/game'
+import { record, redo, startHistory, undo } from '@/lib/history'
+import { addSave, defaultName, parseSaves, removeSave } from '@/lib/saves'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
 
 const A1 = { row: 0, col: 0 }
 const B2 = { row: 1, col: 1 }
 
-describe('toggleSelection', () => {
-  it('picks one person at a time, and drops the pick on a second click', () => {
-    let state = toggleSelection(emptyGame(), 'karen')
-    expect(state.selected).toBe('karen')
-    state = toggleSelection(state, 'julio')
-    expect(state.selected).toBe('julio')
-    expect(toggleSelection(state, 'julio').selected).toBeNull()
-  })
-})
-
 describe('clickCell', () => {
   it('crosses out an empty cell when nobody is picked, and clears the cross', () => {
-    const crossed = clickCell(emptyGame(), A1)
+    const crossed = clickCell(emptyGame(), A1, null)
     expect(crossed.crosses).toEqual(['A1'])
-    expect(clickCell(crossed, A1).crosses).toEqual([])
+    expect(clickCell(crossed, A1, null).crosses).toEqual([])
   })
 
   it('places the picked person, moving them if already placed', () => {
-    let state = clickCell(toggleSelection(emptyGame(), 'karen'), A1)
+    let state = clickCell(emptyGame(), A1, 'karen')
     expect(state.placements).toEqual({ karen: A1 })
-    expect(state.selected).toBeNull()
-    state = clickCell(toggleSelection(state, 'karen'), B2)
+    state = clickCell(state, B2, 'karen')
     expect(state.placements).toEqual({ karen: B2 })
   })
 
   it('empties a cell taken by a person', () => {
-    const state = clickCell(toggleSelection(emptyGame(), 'karen'), A1)
-    expect(clickCell(state, A1).placements).toEqual({})
+    const state = clickCell(emptyGame(), A1, 'karen')
+    expect(clickCell(state, A1, null).placements).toEqual({})
+  })
+
+  it('notes and unnotes a cell for the picked suspect in note mode', () => {
+    const noted = clickCell(emptyGame(), A1, 'karen', 'note')
+    expect(noted.notes).toEqual({ karen: ['A1'] })
+    expect(noted.placements).toEqual({})
+    expect(clickCell(noted, A1, 'karen', 'note').notes).toEqual({ karen: [] })
+  })
+})
+
+describe('placing', () => {
+  it('clears the other suspects’ notes on the same row and column, in one move', () => {
+    let state = emptyGame()
+    for (const cell of [
+      { row: 0, col: 3 },
+      { row: 4, col: 1 },
+      { row: 4, col: 4 },
+    ]) {
+      state = clickCell(state, cell, 'julio', 'note')
+    }
+    state = clickCell(state, A1, 'karen', 'note')
+    state = clickCell(state, B2, 'karen')
+    expect(state.notes.julio).toEqual(['D1', 'E5'])
+    expect(state.notes.karen).toEqual(['A1'])
   })
 })
 
@@ -40,9 +55,26 @@ describe('dropPerson', () => {
     let state = dropPerson(emptyGame(), 'karen', A1)
     state = dropPerson(state, 'julio', A1)
     expect(state.placements).toEqual({ julio: A1 })
-    state = dropPerson(clickCell(state, B2), 'karen', B2)
+    state = dropPerson(clickCell(state, B2, null), 'karen', B2)
     expect(state.crosses).toEqual([])
     expect(state.placements).toEqual({ julio: A1, karen: B2 })
+  })
+})
+
+describe('history', () => {
+  it('undoes and redoes moves, and records nothing for a move that changes nothing', () => {
+    let history = startHistory(emptyGame())
+    history = record(history, clickCell(history.present, A1, null))
+    history = record(history, clickCell(history.present, B2, 'karen'))
+    history = record(history, history.present)
+    expect(history.past).toHaveLength(2)
+    history = undo(history)
+    expect(history.present.placements).toEqual({})
+    expect(history.present.crosses).toEqual(['A1'])
+    history = redo(history)
+    expect(history.present.placements).toEqual({ karen: B2 })
+    history = record(undo(history), emptyGame())
+    expect(history.future).toEqual([])
   })
 })
 
@@ -58,5 +90,34 @@ describe('isSolved', () => {
       antoine: SOLUTION_PLACEMENTS.francois!,
     }
     expect(isSolved(PUZZLE, swapped)).toBe(false)
+  })
+})
+
+describe('saves', () => {
+  it('adds named saves first, removes them, and drops unreadable storage', () => {
+    let saves = addSave([], 'Avant Karen', emptyGame(), 1)
+    saves = addSave(saves, '  ', clickCell(emptyGame(), A1, null), 2)
+    expect(saves.map((s) => s.name)).toEqual([defaultName(2), 'Avant Karen'])
+    expect(parseSaves(JSON.stringify(saves))).toEqual(saves)
+    expect(removeSave(saves, saves[0]!.id)).toHaveLength(1)
+    expect(parseSaves('pas du json')).toEqual([])
+    expect(parseSaves('[{"id":1}]')).toEqual([])
+  })
+})
+
+describe('crossing out', () => {
+  it('clears every note on the cell, in the same move', () => {
+    let state = clickCell(emptyGame(), A1, 'karen', 'note')
+    state = clickCell(state, A1, 'julio', 'note')
+    state = clickCell(state, B2, 'julio', 'note')
+    state = clickCell(state, A1, null)
+    expect(state.crosses).toEqual(['A1'])
+    expect(state.notes).toEqual({ karen: [], julio: ['B2'] })
+  })
+
+  it('is what a click does with nobody picked, whatever the mode', () => {
+    expect(clickEffect(null, 'note')).toBe('cross')
+    expect(clickEffect('karen', 'note')).toBe('note')
+    expect(clickEffect('karen', 'place')).toBe('place')
   })
 })

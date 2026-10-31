@@ -25,7 +25,7 @@ dans `public/avatars/<id>.png` (fond de Thiery détouré, signature « SP-STUDIO
 | Vue 3 (`<script setup>`) + TypeScript | UI |
 | Vite | Build / dev server (port **2020**) |
 | Tailwind CSS v4 | Styles (via `@tailwindcss/vite`, pas de config JS) |
-| Fontsource | Instrument Sans auto-hébergée (police de la homepage Marmelab) |
+| Fontsource | Creepster (titres) et Special Elite (machine à écrire), auto-hébergées |
 | Vitest + Testing Library (Vue) | Tests unitaires et composants |
 | Prettier | Formatage |
 | ESLint (eslint-plugin-vue + @vue/eslint-config-typescript) | Linting |
@@ -47,22 +47,35 @@ src/
 │   ├── FloorPatterns.vue     # Motifs SVG des sols (un par FloorKind) et ombre portée
 │   ├── FurniturePiece.vue    # Place un meuble sur la grille, l'oriente, choisit son sprite
 │   ├── PeopleLayer.vue       # Avatars sur leurs cases, halo blanc qui suit leur contour
+│   ├── CellLayer.vue         # Couche du joueur : croix, case survolée, sélection, cibles de clic et de dépôt (data-cell)
+│   ├── BloodDrip.vue         # Coulure de sang sous le titre
+│   ├── CastPanel.vue         # « (02) Les personnages » : les 20 avatars, à droite de la carte
 │   └── furniture/            # Sprites SVG : sièges, tables et revêtements, décor
+├── composables/
+│   └── usePersonDrag.ts      # Glisser un personnage (souris ou tactile) vers une case
 ├── data/
 │   ├── zones.ts              # Les 14 zones : code de grille, nom, sol, étage
 │   ├── office.ts             # Grille 20x20 des zones et liste des meubles
 │   ├── people.ts             # Les 20 personnages, la victime, le coupable
+│   ├── clues.ts              # Les indices : texte affiché et règles vérifiées par le solveur et le jeu
 │   └── solution.ts           # La solution, en coordonnées de la carte (« B3 »)
 ├── lib/
 │   ├── grid.ts               # Types Zone / Cell, lecture de la grille des zones
 │   ├── furniture.ts          # Types de meubles, cases couvertes, cases occupables
 │   ├── walls.ts              # Segments entre zones (mur, clôture, garde-corps, plancher)
 │   ├── solution.ts           # Lecture des coordonnées, règles enfreintes par une solution
+│   ├── board.ts              # Plateau pour les règles : zones, cases plaçables, meubles par case, « près de »
+│   ├── rules.ts              # Règles des indices (par personne, globales, meurtre) : ok / enfreinte / ouverte
+│   ├── solver.ts             # Vérifie un placement complet (puzzleStatus), cherche les solutions (solve)
+│   ├── game.ts               # État du joueur et ses actions : sélection, clic sur une case, dépôt
 │   └── geometry.ts           # Taille d'une case, lettres des colonnes
+├── puzzle.ts                 # Le niveau assemblé depuis data/ (plateau, personnages, indices, solution)
 ├── App.vue                   # La page
 ├── index.css                 # Import Tailwind, thème, styles des composants
 ├── main.ts                   # Point d'entrée
 └── vite-env.d.ts
+tools/
+└── solve.test.ts             # `make solve` : diagnostic d'unicité (config vitest.solve.config.ts)
 tests/
 ├── setup.ts                  # jest-dom + matchMedia pour jsdom
 ├── unit/                     # Vitest : src/lib/
@@ -94,6 +107,14 @@ tests/
   utilisateur (l'écran est du côté opposé) ; les îlots de 2 colonnes placent
   leurs utilisateurs à l'ouest et à l'est, ceux de 2 lignes au nord et au sud.
 
+## Mise en page
+
+- Sur grand écran (`lg`), la page tient dans la hauteur de la fenêtre sans
+  défiler : la carte seule à droite, sur toute la hauteur (sa largeur suit,
+  elle est carrée, au plus la moitié de l'écran) ; à gauche, le titre et le
+  panneau des personnages, qui défile seul si besoin.
+- En dessous, tout s'empile et la page défile normalement.
+
 ## Solution et mode debug
 
 - `data/solution.ts` place chaque personnage (une personne par ligne et par
@@ -101,17 +122,46 @@ tests/
   pièce). `tests/unit/solution.test.ts` vérifie ces règles avec
   `solutionProblems`.
 - **Mode debug** : `?debug` dans l'URL (http://localhost:2020/?debug) affiche
-  la solution, hache en rouge les cases non plaçables et liste les règles
-  enfreintes.
+  la solution et hache en rouge les cases non plaçables, sans encart dans la
+  page ; les règles enfreintes partent dans la console.
+
+## Interactions
+
+- Clic sur un personnage : le sélectionne (un seul à la fois), ou le
+  désélectionne.
+- Clic sur une case : la vide si elle est occupée (personne ou croix) ; sinon
+  y place le personnage sélectionné, ou y met une croix si personne ne l'est.
+- Glisser un personnage (depuis le panneau ou la carte) vers une case : la
+  case survolée s'allume, le dépôt remplace ce qu'elle contenait.
+- Seules les cases plaçables acceptent clics et dépôts. La logique est pure
+  (`lib/game.ts`, testée) ; le glisser passe par les événements pointeur.
+
+## Indices et solveur
+
+- `data/clues.ts` : chaque indice a son texte et ses règles (`lib/rules.ts`).
+  Les règles disent, pour un placement même partiel, si l'indice est
+  respecté, enfreint ou encore ouvert : c'est la base du moteur de jeu.
+- `lib/solver.ts` : `puzzleStatus` vérifie un placement complet ; `solve`
+  cherche jusqu'à deux solutions (domaine de chaque personne d'après ses
+  propres indices, personne la plus contrainte d'abord, couplage lignes /
+  colonnes, règles de pièce et indices de comptage appliqués en cours de
+  route). Quelques dizaines de millisecondes sur le niveau.
+- `make solve` (`tools/solve.test.ts`, hors `make test`) : « 1 solution » ou
+  « Au moins 2 solutions » avec les personnes qui changent de place, et les
+  écarts avec `data/solution.ts`. À relancer après chaque nouvel indice.
+- Règles de vocabulaire des indices : en tête de `data/clues.ts`.
 
 ## Charte graphique
 
-Reprise de la homepage Marmelab (`marmelab.github.io`, `LandingPage.css`) :
-fond `light-blue`, textes `deeper-blue` / `deep-blue`, dégradé
-`gradient-start` vers `gradient-stop` (bleu lavande vers bleu ciel), police
-Instrument Sans, titres en `font-medium` avec interlettrage négatif, rayons de
-0.25rem, sections numérotées « (01) ». Variables dans le `@theme` de
-`index.css`.
+Style « murder party » (les variables sont dans le `@theme` de `index.css`) :
+fond nuit (`night`) avec des halos rouges, rouge sang (`blood`,
+`blood-bright`, `blood-dark`), jaune de ruban de police (`tape`), fiches
+d'enquête sur papier ancien (`.paper`, texte `ink`), tampons (`.stamp`).
+Polices : Creepster pour les titres qui crient (titre, « Les suspects »),
+Special Elite (machine à écrire) pour tout le reste. Le titre est souligné
+d'une coulure de sang (`BloodDrip.vue`), la page s'ouvre sur un ruban
+« Scène de crime ». Les noms de pièces de la carte restent dans une police
+sans empattement étroite, pour tenir dans leur pièce.
 
 ---
 
@@ -172,6 +222,7 @@ Instrument Sans, titres en `font-medium` avec interlettrage négatif, rayons de
 | `make format-check` | Vérifie le formatage |
 | `make typecheck` | Vérifie les types |
 | `make test` | Tests unitaires et composants |
+| `make solve` | Dit si les indices mènent à une seule solution ; sinon, qui change de place entre deux solutions |
 | `make fix` | Format + lint |
 | `make check` | build + lint + typecheck + knip + tests |
 | `make clean` | Supprime `dist`, `node_modules`, `coverage` |

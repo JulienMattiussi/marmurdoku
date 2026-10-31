@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CellLayer from '@/components/CellLayer.vue'
 import FloorPatterns from '@/components/FloorPatterns.vue'
 import FurniturePiece from '@/components/FurniturePiece.vue'
 import PeopleLayer from '@/components/PeopleLayer.vue'
@@ -10,10 +11,18 @@ import { parseZoneGrid, type Cell } from '@/lib/grid'
 import { zoneBoundaries } from '@/lib/walls'
 
 defineProps<{
-  /** People to draw, by id; none in the game until the player places them. */
-  placements?: Record<string, Cell>
+  /** People on the map, by id. */
+  placements: Record<string, Cell>
+  crosses: string[]
+  hoverCell: Cell | null
+  selectedCell: Cell | null
   /** Debug: hatch the cells where nobody can stand. */
   showBlocked?: boolean
+}>()
+
+const emit = defineEmits<{
+  cellClick: [cell: Cell]
+  cellPress: [cell: Cell, event: PointerEvent]
 }>()
 
 const zones = parseZoneGrid(ZONE_GRID, ZONES)
@@ -117,7 +126,16 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
       <text :x="label.x" :y="label.y">{{ label.name }}</text>
     </g>
 
-    <PeopleLayer v-if="placements" :placements="placements" />
+    <PeopleLayer :placements="placements" />
+
+    <CellLayer
+      :placeable="placeable"
+      :crosses="crosses"
+      :hover-cell="hoverCell"
+      :selected-cell="selectedCell"
+      @click="emit('cellClick', $event)"
+      @press="(cell, event) => emit('cellPress', cell, event)"
+    />
 
     <rect x="-3" y="-3" :width="size + 6" :height="size + 6" class="frame" />
 
@@ -139,7 +157,7 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
 .coordinates text {
   font-size: 13px;
   font-weight: 600;
-  fill: var(--color-deep-blue);
+  fill: var(--color-bone);
   text-anchor: middle;
   dominant-baseline: central;
 }
@@ -152,7 +170,7 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
   stroke-linecap: round;
 }
 .boundary--wall line {
-  stroke: var(--color-deep-blue);
+  stroke: var(--color-wall);
   stroke-width: 6;
 }
 .boundary--fence line {
@@ -166,18 +184,20 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
   stroke-dasharray: 3 5;
 }
 .boundary--floor line {
-  stroke: var(--color-deeper-blue);
+  stroke: var(--color-wall);
   stroke-width: 8;
 }
 .frame {
   fill: none;
-  stroke: var(--color-deeper-blue);
+  stroke: var(--color-blood-dark);
   stroke-width: 6;
 }
 .zone-label text {
+  /* Narrower than the typewriter font: names must fit their room. */
+  font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
-  fill: var(--color-deeper-blue);
+  fill: var(--color-ink);
   paint-order: stroke;
   stroke: rgb(255 255 255 / 85%);
   stroke-width: 3px;

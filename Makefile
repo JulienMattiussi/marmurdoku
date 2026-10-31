@@ -39,6 +39,9 @@ test-watch: ## Run tests in watch mode
 test-coverage: ## Run tests with coverage report
 	npm run test:coverage
 
+solve: ## Tell whether the clues lead to a single solution (and what differs if not)
+	npm run solve
+
 fix: format lint ## Format and lint all code
 
 check: build lint typecheck knip test ## Run all checks (build, lint, typecheck, knip, tests)

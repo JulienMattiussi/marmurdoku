@@ -1,34 +1,58 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/instrument-sans';
+@import '@fontsource/creepster';
+@import '@fontsource/special-elite';
 
-/* Palette and type of the Marmelab homepage (marmelab.github.io, LandingPage.css). */
+/*
+ * Murder party: a night-black page, blood red, crime-scene tape yellow,
+ * evidence files on old paper. Creepster for the shouting, Special Elite
+ * (typewriter) for everything the investigation writes down.
+ */
 @theme {
-  --color-light-blue: rgb(242, 243, 246);
-  --color-deep-blue: rgb(60, 66, 83);
-  --color-deeper-blue: rgb(27, 30, 38);
-  --color-accent: rgb(145, 170, 245);
-  --color-gradient-start: rgb(144, 169, 243);
-  --color-gradient-stop: rgb(166, 224, 249);
-  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --color-night: #140b0d;
+  --color-bone: #efe3cc;
+  --color-paper: #e9dcc0;
+  --color-ink: #2a1d18;
+  --color-blood: #b0121e;
+  --color-blood-bright: #e1252f;
+  --color-blood-dark: #5e0910;
+  --color-tape: #f2c418;
+  --color-wall: #2c2427;
+  --font-horror: 'Creepster', cursive;
+  --font-sans: 'Special Elite', ui-monospace, monospace;
 }
 
 @layer base {
   body {
-    @apply bg-light-blue text-deeper-blue font-sans antialiased;
+    @apply bg-night text-bone font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse at 15% 0%, rgb(176 18 30 / 28%), transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgb(94 9 16 / 35%), transparent 50%);
+    background-attachment: fixed;
   }
 }
 
 @layer components {
-  /* Highlighter stroke behind a word, as on the homepage titles. */
-  .highlight {
-    background: linear-gradient(
-      245.77deg,
-      rgb(from var(--color-gradient-start) r g b / 32%) 26.06%,
-      rgb(from var(--color-gradient-stop) r g b / 32%) 89.85%
-    );
-    background-repeat: no-repeat;
-    background-size: auto 1em;
-    background-position-y: 0.1em;
-    box-decoration-break: clone;
+  /* Police tape across the top of the page. */
+  .crime-tape {
+    background: repeating-linear-gradient(-45deg, var(--color-tape) 0 18px, #1a1a1a 18px 36px);
+  }
+  .crime-tape__text {
+    @apply bg-tape text-night;
+  }
+
+  /* Old paper of the evidence files. */
+  .paper {
+    @apply bg-paper text-ink;
+    background-image: radial-gradient(circle at 20% 15%, rgb(255 255 255 / 35%), transparent 60%);
+    box-shadow:
+      0 1px 0 rgb(0 0 0 / 30%),
+      0 6px 14px -6px rgb(0 0 0 / 60%);
+  }
+
+  /* Rubber stamp. */
+  .stamp {
+    @apply border-blood text-blood rounded-sm border-2 px-1.5 font-sans text-xs tracking-widest uppercase;
+    transform: rotate(-8deg);
+    opacity: 0.85;
   }
 }

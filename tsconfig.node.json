@@ -28,5 +28,13 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "tests/**/*.ts", "src/**/*.vue", "src/**/*.ts"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.solve.config.ts",
+    "tests/**/*.ts",
+    "tools/**/*.ts",
+    "src/**/*.vue",
+    "src/**/*.ts"
+  ]
 }

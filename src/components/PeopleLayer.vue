@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { avatarUrl, PEOPLE } from '@/data/people'
 import { CELL } from '@/lib/geometry'
 import type { Cell } from '@/lib/grid'
@@ -11,13 +12,15 @@ const props = defineProps<{ placements: Record<string, Cell> }>()
 
 const SIZE = 44
 
-const people = PEOPLE.flatMap((person) => {
-  const cell = props.placements[person.id]
-  if (!cell) return []
-  const x = cell.col * CELL + (CELL - SIZE) / 2
-  const y = cell.row * CELL + (CELL - SIZE) / 2
-  return [{ ...person, x, y }]
-})
+const people = computed(() =>
+  PEOPLE.flatMap((person) => {
+    const cell = props.placements[person.id]
+    if (!cell) return []
+    const x = cell.col * CELL + (CELL - SIZE) / 2
+    const y = cell.row * CELL + (CELL - SIZE) / 2
+    return [{ ...person, x, y }]
+  }),
+)
 </script>
 
 <template>

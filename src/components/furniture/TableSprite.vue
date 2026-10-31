@@ -46,20 +46,34 @@ const top = computed(() => {
 })
 
 /**
- * One screen per seated desk cell, against the edge opposite to its user:
- * islands two cells high seat people on their north and south sides; a lone
- * desk seats its user to the south and is turned by FurniturePiece.
+ * Monitors of a desk, centered on (cx, cy) and drawn for a user to the south
+ * (flipped for one to the north). One per seated cell, against the edge
+ * opposite to its user: islands two cells high seat people north and south, a
+ * lone desk seats its user to the south and is turned by FurniturePiece. A
+ * face-to-face desk has two back to back in the middle.
  */
 const screens = computed(() => {
   const cols = props.width / CELL
   const rows = props.height / CELL
+  if (props.kind === 'facingDesk') {
+    // Two screens back to back in the middle, one for each side.
+    return Array.from({ length: cols }, (_, col) => [
+      { cx: col * CELL + CELL / 2, cy: props.height / 2 - 4, userNorth: true, key: `${col}n` },
+      { cx: col * CELL + CELL / 2, cy: props.height / 2 + 4, userNorth: false, key: `${col}s` },
+    ]).flat()
+  }
   return Array.from({ length: cols * rows }, (_, i) => {
     const col = i % cols
     const row = Math.floor(i / cols)
-    const side: Facing = rows === 2 && row === 0 ? 'north' : 'south'
-    const x = col * CELL + 12
-    const y = row * CELL + (side === 'north' ? 36 : 8)
-    return { x, y, key: i, seated: props.seated?.[i] ?? true }
+    const userNorth = rows === 2 && row === 0
+    const cy = row * CELL + (userNorth ? 34 : 14)
+    return {
+      cx: col * CELL + CELL / 2,
+      cy,
+      userNorth,
+      key: `${i}`,
+      seated: props.seated?.[i] ?? true,
+    }
   }).filter((screen) => screen.seated)
 })
 </script>
@@ -67,6 +81,12 @@ const screens = computed(() => {
 <template>
   <!-- facingDesk: two users face to face across it (north and south), screens back to back. -->
   <g v-if="kind === 'desk' || kind === 'plainDesk' || kind === 'facingDesk'" filter="url(#drop)">
+    <defs>
+      <linearGradient id="screen-glow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#8fd3ff" stop-opacity="0.6" />
+        <stop offset="1" stop-color="#8fd3ff" stop-opacity="0" />
+      </linearGradient>
+    </defs>
     <rect
       :x="top.x"
       :y="top.y"
@@ -77,38 +97,17 @@ const screens = computed(() => {
       :stroke="top.rounded ? '#d6cfc4' : 'none'"
     />
     <path v-if="!top.rounded" :d="top.border" stroke="#d6cfc4" fill="none" />
-    <template v-if="kind === 'facingDesk'">
-      <rect
-        v-for="i in width / CELL"
-        :key="i"
-        :x="(i - 1) * CELL + 12"
-        :y="height / 2 - 5"
-        width="24"
-        height="4"
-        rx="1.5"
-        fill="#2f3542"
-      />
-      <rect
-        v-for="i in width / CELL"
-        :key="`back${i}`"
-        :x="(i - 1) * CELL + 12"
-        :y="height / 2 + 1"
-        width="24"
-        height="4"
-        rx="1.5"
-        fill="#2f3542"
-      />
-    </template>
-    <rect
-      v-for="s in kind === 'desk' ? screens : []"
+    <!-- Monitors like the TVs: dark frame, lit picture, stand behind, glow toward the user. -->
+    <g
+      v-for="s in kind === 'plainDesk' ? [] : screens"
       :key="s.key"
-      :x="s.x"
-      :y="s.y"
-      width="24"
-      height="4"
-      rx="1.5"
-      fill="#2f3542"
-    />
+      :transform="`translate(${s.cx} ${s.cy}) scale(1 ${s.userNorth ? -1 : 1})`"
+    >
+      <path d="M-11 5H11L15 12H-15Z" fill="url(#screen-glow)" />
+      <rect x="-4" y="-5" width="8" height="4" rx="1" fill="#1d2129" />
+      <rect x="-13" y="-2" width="26" height="7" rx="2" fill="#1d2129" />
+      <rect x="-11" y="-0.5" width="22" height="4" rx="1" fill="#3c8fd6" />
+    </g>
   </g>
 
   <g v-else-if="kind === 'table'" filter="url(#drop)">

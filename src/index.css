@@ -1,0 +1,34 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/instrument-sans';
+
+/* Palette and type of the Marmelab homepage (marmelab.github.io, LandingPage.css). */
+@theme {
+  --color-light-blue: rgb(242, 243, 246);
+  --color-deep-blue: rgb(60, 66, 83);
+  --color-deeper-blue: rgb(27, 30, 38);
+  --color-accent: rgb(145, 170, 245);
+  --color-gradient-start: rgb(144, 169, 243);
+  --color-gradient-stop: rgb(166, 224, 249);
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-light-blue text-deeper-blue font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Highlighter stroke behind a word, as on the homepage titles. */
+  .highlight {
+    background: linear-gradient(
+      245.77deg,
+      rgb(from var(--color-gradient-start) r g b / 32%) 26.06%,
+      rgb(from var(--color-gradient-stop) r g b / 32%) 89.85%
+    );
+    background-repeat: no-repeat;
+    background-size: auto 1em;
+    background-position-y: 0.1em;
+    box-decoration-break: clone;
+  }
+}

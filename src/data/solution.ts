@@ -13,7 +13,7 @@ export const SOLUTION: Record<string, string> = {
   jibe: 'O7',
   karen: 'S8',
   caroline: 'K9',
-  erwan: 'J10',
+  erwan: 'L10',
   guiom: 'D11',
   julio: 'I12', // at the kitchen sink
   jerome: 'H13',
@@ -22,6 +22,6 @@ export const SOLUTION: Record<string, string> = {
   sohanne: 'P16',
   matthieu: 'F17', // at the foosball table
   anthony: 'N18',
-  thibault: 'L19',
+  thibault: 'J19',
   guillaume: 'G20', // by the cars
 }

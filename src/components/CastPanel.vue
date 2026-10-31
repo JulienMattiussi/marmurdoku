@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { CLUES, GENERAL_CLUES } from '@/data/clues'
 import { avatarUrl, PEOPLE } from '@/data/people'
+import { ref } from 'vue'
+import RulesDialog from '@/components/RulesDialog.vue'
 import { cellName } from '@/lib/geometry'
 import type { Cell } from '@/lib/grid'
 
@@ -8,12 +10,20 @@ import type { Cell } from '@/lib/grid'
  * The cast to place on the map, next to it, each with their clues. A click
  * picks a person (one at a time); pressing and moving drags them to a cell.
  */
-defineProps<{ selected: string | null; placements: Record<string, Cell> }>()
+defineProps<{
+  selected: string | null
+  placements: Record<string, Cell>
+  /** "Vérifier" stays greyed out until everyone is on the map. */
+  canVerify: boolean
+}>()
 
 const emit = defineEmits<{
   select: [person: string]
   press: [person: string, event: PointerEvent]
+  verify: []
 }>()
+
+const showRules = ref(false)
 </script>
 
 <template>
@@ -23,14 +33,31 @@ const emit = defineEmits<{
       aria-label="Ce que l’on sait"
     >
       <h2 class="text-sm font-bold tracking-widest uppercase">Rapport d’enquête</h2>
+      <button
+        type="button"
+        class="border-ink/40 hover:border-blood hover:text-blood absolute right-3 bottom-2 rounded-sm border px-2 text-xs tracking-widest uppercase"
+        @click="showRules = true"
+      >
+        Règles
+      </button>
       <span class="stamp bg-paper absolute -top-2.5 right-4">Confidentiel</span>
       <ul class="grid gap-x-6 text-[13px] leading-snug sm:grid-cols-2">
         <li v-for="clue in GENERAL_CLUES" :key="clue.text">— {{ clue.text }}</li>
       </ul>
     </section>
-    <h2 id="cast-title" class="font-horror text-blood-bright text-3xl leading-none">
-      Les suspects
-    </h2>
+    <div class="flex items-center gap-4">
+      <h2 id="cast-title" class="font-horror text-blood-bright text-3xl leading-none">
+        Les suspects
+      </h2>
+      <button
+        type="button"
+        class="bg-blood text-bone hover:bg-blood-bright rounded-sm px-4 py-1.5 font-bold tracking-widest uppercase shadow-lg transition-colors disabled:cursor-not-allowed disabled:bg-stone-600 disabled:text-stone-300 disabled:shadow-none"
+        :disabled="!canVerify"
+        @click="emit('verify')"
+      >
+        Vérifier
+      </button>
+    </div>
     <ul
       class="grid grid-cols-2 gap-3 p-1 sm:grid-cols-3 lg:min-h-0 lg:overflow-y-auto xl:grid-cols-3"
     >
@@ -67,5 +94,6 @@ const emit = defineEmits<{
         </button>
       </li>
     </ul>
+    <RulesDialog v-if="showRules" @close="showRules = false" />
   </aside>
 </template>

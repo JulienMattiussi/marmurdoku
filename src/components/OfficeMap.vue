@@ -1,16 +1,18 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import CellLayer from '@/components/CellLayer.vue'
 import FloorPatterns from '@/components/FloorPatterns.vue'
 import FurniturePiece from '@/components/FurniturePiece.vue'
 import PeopleLayer from '@/components/PeopleLayer.vue'
 import { FURNITURE, ZONE_GRID } from '@/data/office'
 import { ZONES } from '@/data/zones'
-import { placeableGrid, seatedCells } from '@/lib/furniture'
-import { CELL, columnName } from '@/lib/geometry'
+import { PEOPLE } from '@/data/people'
+import { FURNITURE_KINDS, furnitureCells, placeableGrid, seatedCells } from '@/lib/furniture'
+import { CELL, cellName, columnName } from '@/lib/geometry'
 import { parseZoneGrid, type Cell } from '@/lib/grid'
 import { zoneBoundaries } from '@/lib/walls'
 
-defineProps<{
+const props = defineProps<{
   /** People on the map, by id. */
   placements: Record<string, Cell>
   crosses: string[]
@@ -29,6 +31,34 @@ const zones = parseZoneGrid(ZONE_GRID, ZONES)
 const size = zones.length * CELL
 
 const placeable = placeableGrid(zones, FURNITURE)
+const inRoom = zones.map((row) => row.map(Boolean))
+
+/** Furniture on each cell, as the tooltip names it ("Chaise · Tapis"). */
+const furnitureLabels = zones.map((row) => row.map((): string[] => []))
+for (const piece of FURNITURE) {
+  const label = FURNITURE_KINDS[piece.kind].label
+  for (const { row, col } of furnitureCells(piece)) {
+    const here = furnitureLabels[row]![col]!
+    if (!here.includes(label)) here.push(label)
+  }
+}
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+/** Tooltip text per cell: who stands there, then what furniture. */
+const cellLabels = computed(() => {
+  const names = new Map(
+    Object.entries(props.placements).map(([id, cell]) => [
+      cellName(cell),
+      PEOPLE.find((person) => person.id === id)!.name,
+    ]),
+  )
+  return furnitureLabels.map((row, r) =>
+    row.map((pieces, c) =>
+      [names.get(cellName({ row: r, col: c })), ...pieces.map(capitalize)]
+        .filter(Boolean)
+        .join(' · '),
+    ),
+  )
+})
 const blocked = zones.flatMap((row, r) =>
   row.flatMap((zone, c) =>
     zone && !placeable[r]![c] ? [{ key: `${r}-${c}`, x: c * CELL, y: r * CELL }] : [],
@@ -129,7 +159,9 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
     <PeopleLayer :placements="placements" />
 
     <CellLayer
+      :in-room="inRoom"
       :placeable="placeable"
+      :labels="cellLabels"
       :crosses="crosses"
       :hover-cell="hoverCell"
       :selected-cell="selectedCell"

@@ -44,7 +44,6 @@ export const FURNITURE: Furniture[] = [
   { kind: 'tv', row: 1, col: 11, facing: 'east' },
   { kind: 'stairs', row: 2, col: 17, facing: 'south' },
   // Bureau du chef
-  { kind: 'rug', row: 4, col: 0, width: 2, height: 3, tone: 'grey' },
   { kind: 'printer', row: 3, col: 0, facing: 'east' },
   { kind: 'stairs', row: 4, col: 3, facing: 'north' },
   { kind: 'chair', row: 4, col: 1, facing: 'south' },
@@ -82,7 +81,10 @@ export const FURNITURE: Furniture[] = [
   { kind: 'sink', row: 9, col: 0, facing: 'east' },
   { kind: 'extinguisher', row: 8, col: 11 },
   { kind: 'desk', row: 8, col: 14, facing: 'south' },
-  // Communs: the big staircase runs west from R11-R12, turns on the landing, ends at N17-O17
+  // Communs
+  { kind: 'mailbox', row: 15, col: 17, facing: 'west' },
+  { kind: 'mailbox', row: 16, col: 17, facing: 'west' },
+  // The big staircase runs west from R11-R12, turns on the landing, ends at N17-O17
   { kind: 'stairs', row: 10, col: 15, width: 3, height: 2, facing: 'west', joins: ['west'] },
   { kind: 'landing', row: 10, col: 13, width: 2, height: 2, joins: ['east', 'south'] },
   { kind: 'stairs', row: 12, col: 13, width: 2, height: 5, facing: 'south', joins: ['north'] },

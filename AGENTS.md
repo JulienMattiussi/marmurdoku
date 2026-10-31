@@ -47,8 +47,10 @@ src/
 │   ├── FloorPatterns.vue     # Motifs SVG des sols (un par FloorKind) et ombre portée
 │   ├── FurniturePiece.vue    # Place un meuble sur la grille, l'oriente, choisit son sprite
 │   ├── PeopleLayer.vue       # Avatars sur leurs cases, halo blanc qui suit leur contour
-│   ├── CellLayer.vue         # Couche du joueur : croix, case survolée, sélection, cibles de clic et de dépôt (data-cell)
+│   ├── CellLayer.vue         # Couche du joueur : croix, survol, sélection, infobulle, cibles de clic et de dépôt (data-cell)
 │   ├── BloodDrip.vue         # Coulure de sang sous le titre
+│   ├── VerdictOverlay.vue    # Message de fin devant la carte : « Affaire classée » ou « Raté ! »
+│   ├── RulesDialog.vue       # Fenêtre des règles (bouton « Règles » du rapport d'enquête)
 │   ├── CastPanel.vue         # « (02) Les personnages » : les 20 avatars, à droite de la carte
 │   └── furniture/            # Sprites SVG : sièges, tables et revêtements, décor
 ├── composables/
@@ -133,8 +135,16 @@ tests/
   y place le personnage sélectionné, ou y met une croix si personne ne l'est.
 - Glisser un personnage (depuis le panneau ou la carte) vers une case : la
   case survolée s'allume, le dépôt remplace ce qu'elle contenait.
+- Survol d'une case pendant une seconde : une infobulle nomme qui s'y tient
+  et les meubles qui s'y trouvent (libellés de `FURNITURE_KINDS`).
 - Seules les cases plaçables acceptent clics et dépôts. La logique est pure
   (`lib/game.ts`, testée) ; le glisser passe par les événements pointeur.
+- **Vérifier** (à droite de « Les suspects ») : grisé tant que tout le monde
+  n'est pas placé. Le verdict (`isSolved`) juge sur les règles, pas sur
+  `data/solution.ts` : toute solution que les indices permettent gagne.
+  Échec : « Raté ! » devant la carte pendant 2,5 s, puis on continue. Succès :
+  « Affaire classée » révèle le coupable, reste affiché et fige la partie
+  (`VerdictOverlay.vue`).
 
 ## Indices et solveur
 
@@ -146,10 +156,14 @@ tests/
   propres indices, personne la plus contrainte d'abord, couplage lignes /
   colonnes, règles de pièce et indices de comptage appliqués en cours de
   route). Quelques dizaines de millisecondes sur le niveau.
-- `make solve` (`tools/solve.test.ts`, hors `make test`) : « 1 solution » ou
-  « Au moins 2 solutions » avec les personnes qui changent de place, et les
-  écarts avec `data/solution.ts`. À relancer après chaque nouvel indice.
-- Règles de vocabulaire des indices : en tête de `data/clues.ts`.
+- `make solve` (`tools/solve.test.ts`, hors `make test`) : dit si les indices
+  ne mènent qu'à `data/solution.ts` ; sinon, montre une autre solution valide,
+  personne par personne, par rapport à `data/solution.ts`. À relancer après
+  chaque nouvel indice.
+- Règles de vocabulaire des indices : en tête de `data/clues.ts`, répétées
+  au joueur dans `RulesDialog.vue` (les garder alignées). « Près de » ne
+  traverse pas les murs : la case voisine doit être dans la même pièce
+  (`isNear`).
 
 ## Charte graphique
 
@@ -222,7 +236,7 @@ sans empattement étroite, pour tenir dans leur pièce.
 | `make format-check` | Vérifie le formatage |
 | `make typecheck` | Vérifie les types |
 | `make test` | Tests unitaires et composants |
-| `make solve` | Dit si les indices mènent à une seule solution ; sinon, qui change de place entre deux solutions |
+| `make solve` | Dit si les indices ne mènent qu'à `data/solution.ts` ; sinon, montre une autre solution valide |
 | `make fix` | Format + lint |
 | `make check` | build + lint + typecheck + knip + tests |
 | `make clean` | Supprime `dist`, `node_modules`, `coverage` |

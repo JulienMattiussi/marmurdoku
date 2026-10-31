@@ -1,4 +1,4 @@
-import { isNear, type Board } from '@/lib/board'
+import { distanceTo, isAwayFromWalls, isInCorner, isNear, type Board } from '@/lib/board'
 import type { FurnitureKind } from '@/lib/furniture'
 import type { Cell, Zone } from '@/lib/grid'
 
@@ -16,8 +16,12 @@ export type PersonRule =
   | { type: 'roomWith'; count: number; among: string[] }
   | { type: 'sameZoneAs'; person: string }
   | { type: 'columnGap'; person: string; gap: number }
-  /** On a row above this person's (closer to row 1). */
-  | { type: 'above'; person: string }
+  /** On a row above this person's (closer to row 1); exactly `rows` above if given. */
+  | { type: 'above'; person: string; rows?: number }
+  | { type: 'inCorner' }
+  /** Farther than this person from the closest of these kinds, as the crow flies. */
+  | { type: 'fartherThan'; kinds: FurnitureKind[]; person: string }
+  | { type: 'awayFromWalls' }
   | { type: 'inRows'; rows: number[] }
   | { type: 'inColumns'; cols: number[] }
 
@@ -25,6 +29,8 @@ export type PersonRule =
 export type GlobalRule =
   | { type: 'nearCount'; kinds: FurnitureKind[]; count: number }
   | { type: 'emptyZones'; count: number }
+  /** Exactly `count` people in this room. */
+  | { type: 'zoneCount'; zone: string; count: number }
   /** A clue about one person, told without naming them ("the boss…"). */
   | { type: 'person'; person: string; rule: PersonRule }
 
@@ -100,8 +106,18 @@ export const personRuleStatus = (
     }
     case 'above': {
       const other = placements[rule.person]
-      return other ? verdict(cell.row < other.row) : 'open'
+      if (!other) return 'open'
+      return verdict(rule.rows ? other.row - cell.row === rule.rows : cell.row < other.row)
     }
+    case 'awayFromWalls':
+      return verdict(isAwayFromWalls(board, cell))
+    case 'fartherThan': {
+      const other = placements[rule.person]
+      if (!other) return 'open'
+      return verdict(distanceTo(board, cell, rule.kinds) > distanceTo(board, other, rule.kinds))
+    }
+    case 'inCorner':
+      return verdict(isInCorner(board, cell))
     case 'inRows':
       return verdict(rule.rows.includes(cell.row))
     case 'inColumns':
@@ -122,6 +138,11 @@ export const globalRuleStatus = (
       const near = placed.filter((cell) => isNear(board, cell, rule.kinds)).length
       if (near > rule.count) return 'broken'
       return complete ? verdict(near === rule.count) : 'open'
+    }
+    case 'zoneCount': {
+      const inside = placed.filter((cell) => zoneAt(board, cell).id === rule.zone).length
+      if (inside > rule.count) return 'broken'
+      return complete ? verdict(inside === rule.count) : 'open'
     }
     case 'person':
       return personRuleStatus(rule.rule, rule.person, placements, board, everyone)

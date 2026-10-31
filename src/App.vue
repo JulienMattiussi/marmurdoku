@@ -3,9 +3,17 @@ import { computed, ref } from 'vue'
 import BloodDrip from '@/components/BloodDrip.vue'
 import CastPanel from '@/components/CastPanel.vue'
 import OfficeMap from '@/components/OfficeMap.vue'
+import VerdictOverlay from '@/components/VerdictOverlay.vue'
 import { usePersonDrag } from '@/composables/usePersonDrag'
 import { avatarUrl } from '@/data/people'
-import { clickCell, dropPerson, emptyGame, toggleSelection, type GameState } from '@/lib/game'
+import {
+  clickCell,
+  dropPerson,
+  emptyGame,
+  isSolved,
+  toggleSelection,
+  type GameState,
+} from '@/lib/game'
 import { cellName } from '@/lib/geometry'
 import type { Cell } from '@/lib/grid'
 import { puzzleStatus } from '@/lib/solver'
@@ -21,7 +29,24 @@ const game = ref<GameState>(
   debug ? { ...emptyGame(), placements: { ...SOLUTION_PLACEMENTS } } : emptyGame(),
 )
 
-const drag = usePersonDrag((person, cell) => (game.value = dropPerson(game.value, person, cell)))
+/** After "Vérifier": a wrong guess shows for a moment, a solved case stays and ends the game. */
+const verdict = ref<'solved' | 'wrong' | null>(null)
+const over = computed(() => verdict.value === 'solved')
+const WRONG_MESSAGE_MS = 2500
+
+const everyonePlaced = computed(() => PUZZLE.people.every((id) => game.value.placements[id]))
+const verify = () => {
+  if (isSolved(PUZZLE, game.value.placements)) {
+    verdict.value = 'solved'
+    return
+  }
+  verdict.value = 'wrong'
+  setTimeout(() => (verdict.value = null), WRONG_MESSAGE_MS)
+}
+
+const drag = usePersonDrag((person, cell) => {
+  if (!over.value) game.value = dropPerson(game.value, person, cell)
+})
 
 const occupantOf = (cell: Cell) =>
   Object.keys(game.value.placements).find(
@@ -33,30 +58,36 @@ const selectedCell = computed(() =>
 )
 
 const onCellClick = (cell: Cell) => {
-  if (!drag.wasDragging()) game.value = clickCell(game.value, cell)
+  if (!over.value && !drag.wasDragging()) game.value = clickCell(game.value, cell)
 }
 const onCellPress = (cell: Cell, event: PointerEvent) => {
   const occupant = occupantOf(cell)
-  if (occupant) drag.press(occupant, event)
+  if (occupant && !over.value) drag.press(occupant, event)
 }
 const onSelect = (person: string) => {
-  if (!drag.wasDragging()) game.value = toggleSelection(game.value, person)
+  if (!over.value && !drag.wasDragging()) game.value = toggleSelection(game.value, person)
+}
+const onPress = (person: string, event: PointerEvent) => {
+  if (!over.value) drag.press(person, event)
 }
 </script>
 
 <template>
   <!-- Large screens: the map alone on the right, as tall as the window; the rest on the left. -->
   <main class="flex flex-col gap-6 p-4 select-none lg:h-dvh lg:flex-row-reverse">
-    <OfficeMap
-      class="h-auto w-full lg:h-full lg:w-auto lg:max-w-[50%] lg:shrink-0"
-      :placements="game.placements"
-      :crosses="game.crosses"
-      :hover-cell="drag.hoverCell.value"
-      :selected-cell="selectedCell"
-      :show-blocked="debug"
-      @cell-click="onCellClick"
-      @cell-press="onCellPress"
-    />
+    <div class="relative lg:h-full lg:max-w-[50%] lg:shrink-0">
+      <OfficeMap
+        class="h-auto w-full lg:h-full lg:w-auto lg:max-w-full"
+        :placements="game.placements"
+        :crosses="game.crosses"
+        :hover-cell="drag.hoverCell.value"
+        :selected-cell="selectedCell"
+        :show-blocked="debug"
+        @cell-click="onCellClick"
+        @cell-press="onCellPress"
+      />
+      <VerdictOverlay v-if="verdict" :verdict="verdict" />
+    </div>
     <div class="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
       <header class="flex flex-col gap-3">
         <div class="crime-tape -mx-4 -mt-4 -rotate-1 py-1.5 shadow-lg lg:-mt-2">
@@ -85,8 +116,10 @@ const onSelect = (person: string) => {
       <CastPanel
         :selected="game.selected"
         :placements="game.placements"
+        :can-verify="everyonePlaced && !over"
         @select="onSelect"
-        @press="drag.press"
+        @press="onPress"
+        @verify="verify"
       />
     </div>
     <img

@@ -195,6 +195,34 @@ const spines = computed(() => {
     <rect :x="width * 0.75 - 7" y="5" width="7" height="3" rx="1" fill="#e04848" />
   </g>
 
+  <!--
+    Letter boxes in slight perspective: the top of the block against the wall,
+    then its front face leaning toward the viewer, three doors with their slot
+    and name tag, a letter sticking out of the middle one.
+  -->
+  <g v-else-if="kind === 'mailbox'" filter="url(#drop)">
+    <rect x="5" y="4" width="38" height="12" rx="1.5" fill="#3a566f" />
+    <path d="M5 16H43L45 40H3Z" fill="#4a6b8a" />
+    <path d="M17.7 16L17 40M30.3 16L31 40" stroke="#3a566f" stroke-width="1.5" />
+    <g v-for="i in 3" :key="i" :transform="`translate(${5.5 + (i - 1) * 12.7} 0)`">
+      <rect x="1.5" y="20" width="8.5" height="2" rx="0.5" fill="#1f2d3a" />
+      <template v-if="i === 2">
+        <rect
+          x="3"
+          y="21"
+          width="6"
+          height="6"
+          fill="#ffffff"
+          stroke="#b9b0a2"
+          stroke-width="0.6"
+        />
+        <rect x="6.3" y="23.8" width="2" height="2.2" fill="#e1252f" />
+      </template>
+      <rect x="2.5" y="30" width="6.5" height="3" fill="#f5f0e8" />
+      <circle cx="9" cy="35" r="0.9" fill="#d9a521" />
+    </g>
+  </g>
+
   <g v-else-if="kind === 'printer'" filter="url(#drop)">
     <rect x="6" y="10" width="36" height="28" rx="3" fill="#d9dde3" stroke="#a9b0ba" />
     <rect x="12" y="6" width="24" height="8" rx="1" fill="#fff" stroke="#c4c9d0" />

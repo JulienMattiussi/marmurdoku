@@ -1,4 +1,5 @@
-import { clickCell, dropPerson, emptyGame, toggleSelection } from '@/lib/game'
+import { clickCell, dropPerson, emptyGame, isSolved, toggleSelection } from '@/lib/game'
+import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
 
 const A1 = { row: 0, col: 0 }
 const B2 = { row: 1, col: 1 }
@@ -42,5 +43,20 @@ describe('dropPerson', () => {
     state = dropPerson(clickCell(state, B2), 'karen', B2)
     expect(state.crosses).toEqual([])
     expect(state.placements).toEqual({ julio: A1, karen: B2 })
+  })
+})
+
+describe('isSolved', () => {
+  it('accepts the solution, refuses it incomplete or with a broken clue', () => {
+    expect(isSolved(PUZZLE, SOLUTION_PLACEMENTS)).toBe(true)
+    const missing = { ...SOLUTION_PLACEMENTS }
+    delete missing.karen
+    expect(isSolved(PUZZLE, missing)).toBe(false)
+    const swapped = {
+      ...SOLUTION_PLACEMENTS,
+      francois: SOLUTION_PLACEMENTS.antoine!,
+      antoine: SOLUTION_PLACEMENTS.francois!,
+    }
+    expect(isSolved(PUZZLE, swapped)).toBe(false)
   })
 })

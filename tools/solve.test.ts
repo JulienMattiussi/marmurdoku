@@ -4,35 +4,28 @@ import { solve } from '@/lib/solver'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
 
 /**
- * `make solve`: tells whether the clues lead to a single solution. When they
- * do not, prints two solutions and who stands elsewhere from one to the
- * other, to know which clue to add. Not part of `make test`.
+ * `make solve`: tells whether the clues single out data/solution.ts. If another
+ * placement also fits every clue, prints who stands elsewhere in it, compared
+ * with data/solution.ts, to know which clue to add. Not part of `make test`.
  */
-it('reports how many solutions the clues allow', () => {
+it('reports whether the clues lead to data/solution.ts only', () => {
   const start = performance.now()
   const found = solve(PUZZLE, 2)
   const time = Math.round(performance.now() - start)
-  const name = (id: string) => PEOPLE.find((person) => person.id === id)!.name
-  const lines = [
-    `${found.length >= 2 ? 'Au moins 2 solutions' : `${found.length} solution`} (${time} ms)`,
-  ]
-  const [first, second] = found
-  if (first && second) {
-    const moved = PEOPLE.filter(({ id }) => cellName(first[id]!) !== cellName(second[id]!))
-    lines.push('Personnes qui changent de place entre les deux :')
-    for (const { id } of moved) {
-      lines.push(`  ${name(id)} : ${cellName(first[id]!)} ou ${cellName(second[id]!)}`)
+  const same = (placements: (typeof found)[number]) =>
+    PEOPLE.every(({ id }) => cellName(placements[id]!) === cellName(SOLUTION_PLACEMENTS[id]!))
+  const other = found.find((placements) => !same(placements))
+  const lines: string[] = []
+  if (!other) {
+    lines.push(`Solution unique : c'est celle de data/solution.ts (${time} ms)`)
+  } else {
+    lines.push(`Une autre solution respecte tous les indices (${time} ms).`)
+    lines.push('Par rapport à data/solution.ts, elle place :')
+    for (const { id, name } of PEOPLE) {
+      const theirs = cellName(other[id]!)
+      const ours = cellName(SOLUTION_PLACEMENTS[id]!)
+      if (theirs !== ours) lines.push(`  ${name} en ${theirs} (au lieu de ${ours})`)
     }
-  }
-  if (first) {
-    const differs = PEOPLE.filter(
-      ({ id }) => cellName(first[id]!) !== cellName(SOLUTION_PLACEMENTS[id]!),
-    )
-    lines.push(
-      differs.length
-        ? `Écarts avec data/solution.ts : ${differs.map(({ id }) => `${name(id)} ${cellName(first[id]!)}`).join(', ')}`
-        : 'La première solution est celle de data/solution.ts.',
-    )
   }
   console.log(lines.join('\n'))
 }, 120000)

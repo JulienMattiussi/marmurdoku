@@ -19,7 +19,6 @@ const props = defineProps<{
 
 const RUG_TONES: Partial<Record<Tone, { fill: string; border: string; stitch: string }>> = {
   green: { fill: '#c8d07f', border: '#9aa456', stitch: '#e0e6a8' },
-  grey: { fill: '#b7bcc4', border: '#8e949e', stitch: '#d3d7dd' },
 }
 const rug = computed(() => RUG_TONES[props.tone ?? 'green'] ?? RUG_TONES.green!)
 

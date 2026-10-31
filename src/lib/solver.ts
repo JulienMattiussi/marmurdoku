@@ -43,8 +43,8 @@ interface Links {
   roomWith?: { count: number; among: Set<number> }
   sameZone: number[]
   columnGaps: { other: number; gap: number }[]
-  /** People this one stands above (-1) or below (1). */
-  rowOrder: { other: number; side: number }[]
+  /** People this one stands above (-1) or below (1), by exactly `rows` if set. */
+  rowOrder: { other: number; side: number; rows?: number }[]
 }
 
 /**
@@ -138,8 +138,8 @@ export const solve = (puzzle: Puzzle, limit = 2): Placements[] => {
       }
       if (rule.type === 'above') {
         const q = index.get(rule.person)!
-        links[p]!.rowOrder.push({ other: q, side: -1 })
-        links[q]!.rowOrder.push({ other: p, side: 1 })
+        links[p]!.rowOrder.push({ other: q, side: -1, rows: rule.rows })
+        links[q]!.rowOrder.push({ other: p, side: 1, rows: rule.rows })
       }
       if (rule.type === 'columnGap') {
         const q = index.get(rule.person)!
@@ -160,6 +160,12 @@ export const solve = (puzzle: Puzzle, limit = 2): Placements[] => {
       : [],
   )
   const emptyRule = globalRules.find((rule) => rule.type === 'emptyZones')
+  // Rooms holding a set number of people.
+  const zoneLimits = new Map(
+    globalRules.flatMap((rule) =>
+      rule.type === 'zoneCount' ? [[zoneIds.indexOf(rule.zone), rule.count] as const] : [],
+    ),
+  )
   const roomsToFill = emptyRule ? zoneIds.length - emptyRule.count : 0
 
   const position = new Array<number>(n).fill(-1)
@@ -173,6 +179,7 @@ export const solve = (puzzle: Puzzle, limit = 2): Placements[] => {
     const zone = zoneOfCell[cell]!
     const here = occupants[zone]!
     if (links[p]!.alone && here.length) return false
+    if (here.length >= (zoneLimits.get(zone) ?? Infinity)) return false
     for (const q of here) {
       if (links[q]!.alone) return false
       if (pair.has(q) !== pair.has(p)) return false
@@ -189,10 +196,10 @@ export const solve = (puzzle: Puzzle, limit = 2): Placements[] => {
     for (const q of links[p]!.sameZone) {
       if (position[q]! >= 0 && zoneOfCell[position[q]!] !== zone) return false
     }
-    for (const { other, side } of links[p]!.rowOrder) {
-      if (position[other]! >= 0 && Math.sign(rowOf(cell) - rowOf(position[other]!)) !== side) {
-        return false
-      }
+    for (const { other, side, rows } of links[p]!.rowOrder) {
+      if (position[other]! < 0) continue
+      const gap = rowOf(cell) - rowOf(position[other]!)
+      if (Math.sign(gap) !== side || (rows && Math.abs(gap) !== rows)) return false
     }
     for (const { other, gap } of links[p]!.columnGaps) {
       if (position[other]! >= 0 && Math.abs(colOf(position[other]!) - colOf(cell)) !== gap) {
@@ -241,6 +248,9 @@ export const solve = (puzzle: Puzzle, limit = 2): Placements[] => {
         const partner = [...pair].find((p) => position[p]! < 0)!
         if (!options[left.indexOf(partner)]!.some((c) => zoneOfCell[c] === zone)) return
       }
+    }
+    for (const [zone, count] of zoneLimits) {
+      if (count - occupants[zone]!.length > reachable(zone)) return
     }
     // Counting clues.
     const occupied = occupants.filter((list) => list.length).length

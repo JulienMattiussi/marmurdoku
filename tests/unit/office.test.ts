@@ -1,3 +1,4 @@
+import { buildBoard, distanceTo, isAwayFromWalls, isInCorner, isNear } from '@/lib/board'
 import { FURNITURE, ZONE_GRID } from '@/data/office'
 import { ZONES } from '@/data/zones'
 import {
@@ -105,5 +106,52 @@ describe('seatedCells', () => {
   it('looks on the facing side of a lone desk', () => {
     const desk = { kind: 'desk' as const, row: 0, col: 1, facing: 'west' as const }
     expect(seatedCells(desk, [desk, { kind: 'chair', row: 0, col: 0 }])).toEqual([true])
+  })
+})
+
+describe('isNear', () => {
+  it('sees a piece in the next cell of the same room, not through a wall', () => {
+    const board = buildBoard(
+      ['AB', 'AB'],
+      [
+        { code: 'A', id: 'a', name: 'A', floor: 'oak', level: 'ground' },
+        { code: 'B', id: 'b', name: 'B', floor: 'oak', level: 'ground' },
+      ],
+      [{ kind: 'plant', row: 0, col: 1 }],
+    )
+    expect(isNear(board, { row: 1, col: 1 }, ['plant'])).toBe(true)
+    expect(isNear(board, { row: 0, col: 0 }, ['plant'])).toBe(false)
+  })
+})
+
+describe('isInCorner', () => {
+  it('needs the room to end on two sides that meet; away from walls, on none', () => {
+    const board = buildBoard(
+      ['AAA', 'AAA', 'AAA'],
+      [{ code: 'A', id: 'a', name: 'A', floor: 'oak', level: 'ground' }],
+      [],
+    )
+    expect(isInCorner(board, { row: 0, col: 0 })).toBe(true)
+    expect(isInCorner(board, { row: 2, col: 2 })).toBe(true)
+    expect(isInCorner(board, { row: 0, col: 1 })).toBe(false)
+    expect(isInCorner(board, { row: 1, col: 1 })).toBe(false)
+    expect(isAwayFromWalls(board, { row: 1, col: 1 })).toBe(true)
+    expect(isAwayFromWalls(board, { row: 0, col: 1 })).toBe(false)
+  })
+})
+
+describe('distanceTo', () => {
+  it('measures as the crow flies, to the closest piece', () => {
+    const board = buildBoard(
+      ['AAA', 'AAA', 'AAA'],
+      [{ code: 'A', id: 'a', name: 'A', floor: 'oak', level: 'ground' }],
+      [
+        { kind: 'plant', row: 0, col: 0 },
+        { kind: 'plant', row: 2, col: 2 },
+      ],
+    )
+    expect(distanceTo(board, { row: 0, col: 1 }, ['plant'])).toBe(1)
+    expect(distanceTo(board, { row: 1, col: 1 }, ['plant'])).toBeCloseTo(Math.SQRT2)
+    expect(distanceTo(board, { row: 0, col: 0 }, ['bike'])).toBe(Infinity)
   })
 })

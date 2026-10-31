@@ -5,25 +5,34 @@ import type { Clue, GlobalRule, PersonRule } from '@/lib/rules'
  * What the player knows, each clue as shown (`text`) and as checked by the
  * solver and the game (`rule`, rows and columns counted from 0). Keep the two
  * in step. Wording rules: a "table" is any table or desk; "plants" include
- * the flower bed of the yard; "near" means on a neighboring cell (up, down,
- * left or right); "with someone" means in the same room.
+ * the flower bed of the yard (these two are not told to the player); "near"
+ * means on a neighboring cell (up, down, left or right) of the same room;
+ * "with someone" means in the same room (both told in RulesDialog.vue).
  */
 const TABLES = ['table', 'desk', 'plainDesk', 'facingDesk'] as const
 const PLANTS = ['plant', 'flowerBed'] as const
+/** What one sits on ("était assis"). */
+const SEATS = ['chair', 'stool', 'sofa'] as const
 
 export const CLUES: Record<string, Clue<PersonRule>[]> = {
   adrieng: [
-    { text: 'était à côté d’une table', rules: [{ type: 'nearFurniture', kinds: [...TABLES] }] },
+    {
+      text: 'était assis à côté d’une table',
+      rules: [
+        { type: 'onFurniture', kinds: [...SEATS] },
+        { type: 'nearFurniture', kinds: [...TABLES] },
+      ],
+    },
   ],
   alexandra: [
     { text: 'était à côté d’un escalier', rules: [{ type: 'nearFurniture', kinds: ['stairs'] }] },
   ],
   anthony: [
     {
-      text: 'était avec Thibault, plus haut que lui',
+      text: 'était avec Thibault, juste au-dessus de lui',
       rules: [
         { type: 'sameZoneAs', person: 'thibault' },
-        { type: 'above', person: 'thibault' },
+        { type: 'above', person: 'thibault', rows: 1 },
       ],
     },
   ],
@@ -31,11 +40,16 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   benoit: [
     { text: 'était dans la salle de bain', rules: [{ type: 'inZone', zones: ['bathroom'] }] },
   ],
-  caroline: [{ text: 'était sur une chaise', rules: [{ type: 'onFurniture', kinds: ['chair'] }] }],
+  caroline: [
+    {
+      text: 'était sur une chaise, dans le coin d’une zone',
+      rules: [{ type: 'onFurniture', kinds: ['chair'] }, { type: 'inCorner' }],
+    },
+  ],
   erwan: [
     {
-      text: 'était seul dans le couloir',
-      rules: [{ type: 'inZone', zones: ['corridor'] }, { type: 'alone' }],
+      text: 'était seul, près d’un extincteur',
+      rules: [{ type: 'alone' }, { type: 'nearFurniture', kinds: ['extinguisher'] }],
     },
   ],
   francois: [
@@ -54,8 +68,15 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   jeremie: [{ text: 'était sur un tapis', rules: [{ type: 'onFurniture', kinds: ['rug'] }] }],
   jibe: [
     {
-      text: 'était dans un open space',
-      rules: [{ type: 'inZone', zones: ['large-open-space', 'small-open-space'] }],
+      text: 'était dans un open space, loin des murs',
+      rules: [
+        { type: 'inZone', zones: ['large-open-space', 'small-open-space'] },
+        { type: 'awayFromWalls' },
+      ],
+    },
+    {
+      text: 'était plus loin des boîtes aux lettres que Karen',
+      rules: [{ type: 'fartherThan', kinds: ['mailbox'], person: 'karen' }],
     },
   ],
   jerome: [{ text: 'était près d’une télé', rules: [{ type: 'nearFurniture', kinds: ['tv'] }] }],
@@ -65,7 +86,12 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
       rules: [{ type: 'columnGap', person: 'jerome', gap: 1 }],
     },
   ],
-  karen: [{ text: 'n’était pas seule', rules: [{ type: 'notAlone' }] }],
+  karen: [
+    {
+      text: 'n’était pas seule, exactement à une colonne de Thiery',
+      rules: [{ type: 'notAlone' }, { type: 'columnGap', person: 'thiery', gap: 1 }],
+    },
+  ],
   matthieu: [
     { text: 'était dans la salle de pause', rules: [{ type: 'inZone', zones: ['break-room'] }] },
   ],
@@ -77,7 +103,15 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
     },
   ],
   sohanne: [{ text: 'était sur la ligne 16', rules: [{ type: 'inRows', rows: [15] }] }],
-  thibault: [{ text: 'fumait dans la cour', rules: [{ type: 'inZone', zones: ['yard'] }] }],
+  thibault: [
+    {
+      text: 'fumait dans la cour à côté d’un vélo',
+      rules: [
+        { type: 'inZone', zones: ['yard'] },
+        { type: 'nearFurniture', kinds: ['bike'] },
+      ],
+    },
+  ],
   thiery: [
     {
       text: 'était dans une pièce en hauteur',
@@ -96,6 +130,10 @@ export const GENERAL_CLUES: Clue<GlobalRule>[] = [
   {
     text: 'Deux personnes seulement étaient près de plantes',
     rules: [{ type: 'nearCount', kinds: [...PLANTS], count: 2 }],
+  },
+  {
+    text: 'Il n’y avait qu’une personne dans le Grand open space',
+    rules: [{ type: 'zoneCount', zone: 'large-open-space', count: 1 }],
   },
   {
     text: 'Le chef n’était pas dans son bureau',

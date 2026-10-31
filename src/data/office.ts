@@ -44,6 +44,7 @@ export const FURNITURE: Furniture[] = [
   { kind: 'tv', row: 1, col: 11, facing: 'east' },
   { kind: 'stairs', row: 2, col: 17, facing: 'south' },
   // Bureau du chef
+  { kind: 'rug', row: 4, col: 0, width: 2, height: 3, tone: 'grey' },
   { kind: 'printer', row: 3, col: 0, facing: 'east' },
   { kind: 'stairs', row: 4, col: 3, facing: 'north' },
   { kind: 'chair', row: 4, col: 1, facing: 'south' },
@@ -69,10 +70,10 @@ export const FURNITURE: Furniture[] = [
   { kind: 'chair', row: 3, col: 6, facing: 'east' },
   { kind: 'chair', row: 3, col: 8, facing: 'west' },
   // Petit open space
-  { kind: 'desk', row: 4, col: 13, width: 4, height: 2 },
+  { kind: 'desk', row: 4, col: 13, width: 4, height: 2, screens: ['O6'] },
   { kind: 'chair', row: 3, col: 14, facing: 'south' },
   { kind: 'chair', row: 3, col: 16, facing: 'south' },
-  { kind: 'chair', row: 6, col: 14, facing: 'north' },
+  { kind: 'chair', row: 6, col: 15, facing: 'west' },
   { kind: 'chair', row: 6, col: 16, facing: 'north' },
   { kind: 'plant', row: 7, col: 11 },
   { kind: 'extinguisher', row: 4, col: 17 },
@@ -101,7 +102,7 @@ export const FURNITURE: Furniture[] = [
   { kind: 'plant', row: 12, col: 2 },
   { kind: 'tv', row: 13, col: 2, facing: 'east' },
   { kind: 'sofa', row: 12, col: 4, height: 2, facing: 'west' },
-  { kind: 'rug', row: 14, col: 3, width: 4, height: 3 },
+  { kind: 'rug', row: 14, col: 3, width: 3, height: 2 },
   { kind: 'foosball', row: 15, col: 4, width: 2 },
   // Cuisine
   { kind: 'counter', row: 10, col: 7, joins: ['east'] },

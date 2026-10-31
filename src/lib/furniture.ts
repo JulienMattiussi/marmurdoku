@@ -55,6 +55,8 @@ export interface Furniture extends Cell {
    * sits. For stairs, the way the arrow points.
    */
   facing?: Facing
+  /** Desks: cells ("O6") that keep a screen even with no seat in front. */
+  screens?: string[]
   /** Sides drawn flush with the next piece of the same structure (stairs, landings, desks). */
   joins?: Facing[]
   /** Color variant, for rugs and cars; each sprite falls back to its own default. */
@@ -105,22 +107,37 @@ const STEP: Record<Facing, [number, number]> = {
 }
 
 /**
- * For each cell of a desk (row by row), whether someone can sit at it: a seat
- * stands next to it on its user's side. Islands two cells high seat people
+ * For each cell of a desk (row by row), whether it gets a screen: a seat
+ * stands next to it on its user's side, turned toward the desk; or the desk
+ * lists the cell in `screens`. Islands two cells high seat people
  * north and south; any other desk on the side it faces.
  */
 export const seatedCells = (desk: Furniture, furniture: Furniture[]): boolean[] => {
-  const seats = new Set(
+  const OPPOSITE: Record<Facing, Facing> = {
+    north: 'south',
+    south: 'north',
+    east: 'west',
+    west: 'east',
+  }
+  // Seats by cell, with the way they face (none: any way).
+  const seats = new Map(
     furniture
       .filter((piece) => FURNITURE_KINDS[piece.kind].sprite === 'seat')
-      .flatMap(furnitureCells)
-      .map(({ row, col }) => `${row},${col}`),
+      .flatMap((piece) =>
+        furnitureCells(piece).map((cell) => [`${cell.row},${cell.col}`, piece.facing]),
+      ),
   )
+  const forced = new Set(desk.screens ?? [])
   return furnitureCells(desk).map(({ row, col }) => {
+    if (forced.has(`${String.fromCharCode(65 + col)}${row + 1}`)) return true
     const side =
       desk.height === 2 ? (row === desk.row ? 'north' : 'south') : (desk.facing ?? 'south')
     const [dr, dc] = STEP[side]
-    return seats.has(`${row + dr},${col + dc}`)
+    const key = `${row + dr},${col + dc}`
+    if (!seats.has(key)) return false
+    // A seat turned away from the desk does not count.
+    const facing = seats.get(key)
+    return !facing || facing === OPPOSITE[side]
   })
 }
 

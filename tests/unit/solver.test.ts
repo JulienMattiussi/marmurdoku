@@ -6,6 +6,10 @@ describe('the clues of the level', () => {
   it('all hold on the solution', () => {
     expect(puzzleStatus(PUZZLE, SOLUTION_PLACEMENTS)).toBe('ok')
   })
+
+  it('lead to that solution and no other', () => {
+    expect(solve(PUZZLE, 2)).toEqual([SOLUTION_PLACEMENTS])
+  })
 })
 
 describe('solve', () => {

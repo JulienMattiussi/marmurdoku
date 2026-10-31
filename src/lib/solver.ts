@@ -69,9 +69,10 @@ const hasMatching = (lines: number[][]) => {
 }
 
 /**
- * Finds solutions, at most `limit` of them: one person per row and per
- * column, on placeable cells, every rule holding. Two are enough to tell that
- * the clues are not sufficient yet.
+ * Finds solutions, at most `limit` of them and until `deadline` (a
+ * performance.now() time): one person per row and per column, on placeable
+ * cells, every rule holding. Two are enough to tell that the clues are not
+ * sufficient yet.
  *
  * Each person starts with the cells their own clues allow. The search then
  * places the person with the fewest cells left, and cuts a branch as soon as:
@@ -81,7 +82,7 @@ const hasMatching = (lines: number[][]) => {
  * people near something) can no longer reach its count. Every complete
  * placement is checked against all the rules (puzzleStatus).
  */
-export const solve = (puzzle: Puzzle, limit = 2): Placements[] => {
+export const solve = (puzzle: Puzzle, limit = 2, deadline = Infinity): Placements[] => {
   const { board, people, clues, victim, murderer } = puzzle
   const size = board.size
   const n = people.length
@@ -210,7 +211,7 @@ export const solve = (puzzle: Puzzle, limit = 2): Placements[] => {
   }
 
   const search = (): void => {
-    if (solutions.length >= limit) return
+    if (solutions.length >= limit || performance.now() > deadline) return
     const occupants = zoneIds.map((): number[] => [])
     position.forEach((cell, p) => {
       if (cell >= 0) occupants[zoneOfCell[cell]!]!.push(p)

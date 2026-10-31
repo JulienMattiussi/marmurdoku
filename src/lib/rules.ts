@@ -19,8 +19,8 @@ export type PersonRule =
   /** On a row above this person's (closer to row 1); exactly `rows` above if given. */
   | { type: 'above'; person: string; rows?: number }
   | { type: 'inCorner' }
-  /** Farther than this person from the closest of these kinds, as the crow flies. */
-  | { type: 'fartherThan'; kinds: FurnitureKind[]; person: string }
+  /** Farther than (or closer than) this person from the closest of these kinds, as the crow flies. */
+  | { type: 'fartherThan' | 'closerThan'; kinds: FurnitureKind[]; person: string }
   | { type: 'awayFromWalls' }
   | { type: 'inRows'; rows: number[] }
   | { type: 'inColumns'; cols: number[] }
@@ -111,10 +111,13 @@ export const personRuleStatus = (
     }
     case 'awayFromWalls':
       return verdict(isAwayFromWalls(board, cell))
-    case 'fartherThan': {
+    case 'fartherThan':
+    case 'closerThan': {
       const other = placements[rule.person]
       if (!other) return 'open'
-      return verdict(distanceTo(board, cell, rule.kinds) > distanceTo(board, other, rule.kinds))
+      const mine = distanceTo(board, cell, rule.kinds)
+      const theirs = distanceTo(board, other, rule.kinds)
+      return verdict(rule.type === 'fartherThan' ? mine > theirs : mine < theirs)
     }
     case 'inCorner':
       return verdict(isInCorner(board, cell))

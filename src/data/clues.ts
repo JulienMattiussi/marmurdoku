@@ -38,7 +38,13 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   ],
   antoine: [{ text: 'était dans le lit', rules: [{ type: 'onFurniture', kinds: ['bed'] }] }],
   benoit: [
-    { text: 'était dans la salle de bain', rules: [{ type: 'inZone', zones: ['bathroom'] }] },
+    {
+      text: 'était dans la salle de bain, à côté des toilettes',
+      rules: [
+        { type: 'inZone', zones: ['bathroom'] },
+        { type: 'nearFurniture', kinds: ['toilet'] },
+      ],
+    },
   ],
   caroline: [
     {
@@ -68,15 +74,12 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   jeremie: [{ text: 'était sur un tapis', rules: [{ type: 'onFurniture', kinds: ['rug'] }] }],
   jibe: [
     {
-      text: 'était dans un open space, loin des murs',
+      text: 'était debout dans un open space, à côté d’une chaise',
       rules: [
+        { type: 'notOnFurniture', kinds: [...SEATS, 'bed', 'toilet'] },
         { type: 'inZone', zones: ['large-open-space', 'small-open-space'] },
-        { type: 'awayFromWalls' },
+        { type: 'nearFurniture', kinds: ['chair'] },
       ],
-    },
-    {
-      text: 'était plus loin des boîtes aux lettres que Karen',
-      rules: [{ type: 'fartherThan', kinds: ['mailbox'], person: 'karen' }],
     },
   ],
   jerome: [{ text: 'était près d’une télé', rules: [{ type: 'nearFurniture', kinds: ['tv'] }] }],
@@ -88,12 +91,22 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   ],
   karen: [
     {
-      text: 'n’était pas seule, exactement à une colonne de Thiery',
-      rules: [{ type: 'notAlone' }, { type: 'columnGap', person: 'thiery', gap: 1 }],
+      text: 'n’était pas seule, exactement à une colonne de Thiery, et plus près des boîtes aux lettres que Jibé',
+      rules: [
+        { type: 'notAlone' },
+        { type: 'columnGap', person: 'thiery', gap: 1 },
+        { type: 'closerThan', kinds: ['mailbox'], person: 'jibe' },
+      ],
     },
   ],
   matthieu: [
-    { text: 'était dans la salle de pause', rules: [{ type: 'inZone', zones: ['break-room'] }] },
+    {
+      text: 'était dans la salle de pause, à exactement 3 colonnes de Julio',
+      rules: [
+        { type: 'inZone', zones: ['break-room'] },
+        { type: 'columnGap', person: 'julio', gap: 3 },
+      ],
+    },
   ],
   maxime: [
     { text: 'était dans la dernière colonne', rules: [{ type: 'inColumns', cols: [19] }] },

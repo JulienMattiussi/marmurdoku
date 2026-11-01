@@ -1,0 +1,15 @@
+{
+  "name": "Marmerdoku : meurtre chez Marmelab",
+  "short_name": "Marmerdoku",
+  "description": "Un Murdoku dans les bureaux de Marmelab : démasque le coupable par la logique.",
+  "lang": "fr-FR",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#140b0d",
+  "theme_color": "#140b0d",
+  "icons": [
+    { "src": "favicon.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "type": "image/png", "sizes": "180x180" }
+  ]
+}

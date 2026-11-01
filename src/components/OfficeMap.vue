@@ -2,20 +2,26 @@
 import { computed } from 'vue'
 import CellLayer from '@/components/CellLayer.vue'
 import FloorPatterns from '@/components/FloorPatterns.vue'
-import FurniturePiece from '@/components/FurniturePiece.vue'
+import MapCoordinates from '@/components/MapCoordinates.vue'
+import MapPlan from '@/components/MapPlan.vue'
 import NotesLayer from '@/components/NotesLayer.vue'
 import PeopleLayer from '@/components/PeopleLayer.vue'
 import ReconstructionLayer from '@/components/ReconstructionLayer.vue'
 import { FURNITURE, ZONE_GRID } from '@/data/office'
-import { ZONES } from '@/data/zones'
 import { PEOPLE } from '@/data/people'
-import { FURNITURE_KINDS, furnitureCells, placeableGrid, seatedCells } from '@/lib/furniture'
+import { ZONES } from '@/data/zones'
+import { placeableGrid } from '@/lib/furniture'
 import type { Tool } from '@/lib/game'
-import { CELL, cellName, columnName } from '@/lib/geometry'
+import { CELL } from '@/lib/geometry'
 import { parseZoneGrid, type Cell } from '@/lib/grid'
 import type { Frame } from '@/lib/reconstruction'
-import { zoneBoundaries } from '@/lib/walls'
+import { groundLabels, tooltips } from '@/lib/tooltips'
 
+/**
+ * The map as the page shows it: the plan, then the player's layers (notes,
+ * people, crosses and click targets), or the reconstruction's still, seen
+ * through its camera.
+ */
 const props = defineProps<{
   /** People on the map, by id. */
   placements: Record<string, Cell>
@@ -41,9 +47,11 @@ const emit = defineEmits<{
 
 const zones = parseZoneGrid(ZONE_GRID, ZONES)
 const size = zones.length * CELL
+const placeable = placeableGrid(zones, FURNITURE)
+const inRoom = zones.map((row) => row.map(Boolean))
 
-/** Rows of yard drawn below the map, only ever seen by the reconstruction's camera. */
-const BELOW = 4
+/** Room left around the map for the column letters and row numbers. */
+const MARGIN = 30
 
 /** The camera of the reconstruction, as a transform of the map (the whole map without one). */
 const cameraStyle = computed(() => {
@@ -54,84 +62,9 @@ const cameraStyle = computed(() => {
   }
 })
 
-const placeable = placeableGrid(zones, FURNITURE)
-const inRoom = zones.map((row) => row.map(Boolean))
-
-/** Furniture on each cell, then its carpet, as the tooltip names them ("Chaise · Moquette"). */
-const furnitureLabels = zones.map((row) => row.map((): string[] => []))
-for (const piece of FURNITURE) {
-  const label = FURNITURE_KINDS[piece.kind].label
-  for (const { row, col } of furnitureCells(piece)) {
-    const here = furnitureLabels[row]![col]!
-    if (!here.includes(label)) here.push(label)
-  }
-}
-// The carpet is the one floor a clue names (François's): the tooltip says it too.
-zones.forEach((row, r) =>
-  row.forEach((zone, c) => {
-    if (zone?.floor === 'carpet') furnitureLabels[r]![c]!.push('moquette')
-  }),
-)
-const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
-/** Tooltip text per cell: who stands there, then what furniture, then the carpet. */
-const cellLabels = computed(() => {
-  const names = new Map(
-    Object.entries(props.placements).map(([id, cell]) => [
-      cellName(cell),
-      PEOPLE.find((person) => person.id === id)!.name,
-    ]),
-  )
-  return furnitureLabels.map((row, r) =>
-    row.map((pieces, c) =>
-      [names.get(cellName({ row: r, col: c })), ...pieces.map(capitalize)]
-        .filter(Boolean)
-        .join(' · '),
-    ),
-  )
-})
-const blocked = zones.flatMap((row, r) =>
-  row.flatMap((zone, c) =>
-    zone && !placeable[r]![c] ? [{ key: `${r}-${c}`, x: c * CELL, y: r * CELL }] : [],
-  ),
-)
-
-const cells = zones.flatMap((row, r) =>
-  row.map((zone, c) => ({
-    key: `${r}-${c}`,
-    x: c * CELL,
-    y: r * CELL,
-    fill: zone ? `url(#floor-${zone.floor})` : 'url(#void)',
-  })),
-)
-
-const segments = zoneBoundaries(zones).map((s, i) => ({
-  ...s,
-  key: i,
-  x1: s.x1 * CELL,
-  y1: s.y1 * CELL,
-  x2: s.x2 * CELL,
-  y2: s.y2 * CELL,
-}))
-
-/** Rugs first, so the pieces standing on them are drawn on top. */
-const furniture = [
-  ...FURNITURE.filter((p) => p.kind === 'rug'),
-  ...FURNITURE.filter((p) => p.kind !== 'rug'),
-].map((piece) => ({
-  piece,
-  seated: piece.kind === 'desk' ? seatedCells(piece, FURNITURE) : undefined,
-}))
-
-/** Room names, written in the bottom-left cell of each room. */
-const labels = ZONES.map((zone) => {
-  const r = zones.length - 1 - [...zones].reverse().findIndex((row) => row.includes(zone))
-  const c = zones[r]!.indexOf(zone)
-  return { id: zone.id, name: zone.name, x: c * CELL + 9, y: (r + 1) * CELL - 8 }
-})
-
-/** Room left around the map for the column letters and row numbers. */
-const MARGIN = 30
-const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
+const ground = groundLabels(zones, FURNITURE)
+const nameOf = (id: string) => PEOPLE.find((person) => person.id === id)!.name
+const cellLabels = computed(() => tooltips(ground, props.placements, nameOf))
 </script>
 
 <template>
@@ -147,64 +80,7 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
     </clipPath>
     <g clip-path="url(#map-area)">
       <g class="camera" :style="cameraStyle">
-        <!-- More yard below the map, for a camera centered on the yard's people. -->
-        <rect
-          :y="size"
-          :width="size"
-          :height="BELOW * CELL"
-          :fill="`url(#floor-${zones.at(-1)![0]!.floor})`"
-        />
-        <g class="grid-lines">
-          <path
-            v-for="i in zones.length - 1"
-            :key="i"
-            :d="`M${i * CELL} ${size}v${BELOW * CELL}`"
-          />
-          <path v-for="j in BELOW" :key="`below-${j}`" :d="`M0 ${size + j * CELL}H${size}`" />
-        </g>
-        <rect
-          v-for="cell in cells"
-          :key="cell.key"
-          :x="cell.x"
-          :y="cell.y"
-          :width="CELL"
-          :height="CELL"
-          :fill="cell.fill"
-        />
-
-        <FurniturePiece
-          v-for="(item, i) in furniture"
-          :key="i"
-          :piece="item.piece"
-          :seated="item.seated"
-        />
-
-        <g class="grid-lines">
-          <path
-            v-for="i in zones.length - 1"
-            :key="i"
-            :d="`M${i * CELL} 0V${size}M0 ${i * CELL}H${size}`"
-          />
-        </g>
-
-        <g v-for="s in segments" :key="s.key" :class="`boundary boundary--${s.style}`">
-          <line :x1="s.x1" :y1="s.y1" :x2="s.x2" :y2="s.y2" />
-        </g>
-
-        <g v-if="showBlocked" class="blocked">
-          <rect
-            v-for="cell in blocked"
-            :key="cell.key"
-            :x="cell.x"
-            :y="cell.y"
-            :width="CELL"
-            :height="CELL"
-          />
-        </g>
-
-        <g v-for="label in labels" :key="label.id" class="zone-label">
-          <text :x="label.x" :y="label.y">{{ label.name }}</text>
-        </g>
+        <MapPlan :show-blocked="showBlocked" />
 
         <template v-if="still">
           <PeopleLayer :placements="still.positions" :effects="still.effects" />
@@ -236,70 +112,18 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
     </g>
 
     <rect x="-3" y="-3" :width="size + 6" :height="size + 6" class="frame" />
-
-    <!-- Zoomed in, the letters and numbers around the map no longer match: they fade out. -->
-    <g class="coordinates" :class="{ 'coordinates--zoomed': still?.camera }" aria-hidden="true">
-      <template v-for="tick in ticks" :key="tick.i">
-        <text :x="tick.at" :y="-MARGIN / 2">{{ columnName(tick.i) }}</text>
-        <text :x="tick.at" :y="size + MARGIN / 2">{{ columnName(tick.i) }}</text>
-        <text :x="-MARGIN / 2" :y="tick.at">{{ tick.i + 1 }}</text>
-        <text :x="size + MARGIN / 2" :y="tick.at">{{ tick.i + 1 }}</text>
-      </template>
-    </g>
+    <MapCoordinates :cells="zones.length" :margin="MARGIN" :zoomed="!!still?.camera" />
   </svg>
 </template>
 
 <style scoped>
-.blocked rect {
-  fill: rgb(215 38 61 / 22%);
-}
-.coordinates text {
-  font-size: 13px;
-  font-weight: 600;
-  fill: var(--color-bone);
-  text-anchor: middle;
-  dominant-baseline: central;
-}
-.grid-lines path {
-  stroke: rgb(27 30 38 / 32%);
-  stroke-width: 1.5;
-  stroke-dasharray: 5 3;
-}
-.boundary line {
-  stroke-linecap: round;
-}
-.boundary--wall line {
-  stroke: var(--color-wall);
-  stroke-width: 6;
-}
-.boundary--fence line {
-  stroke: #8a8270;
-  stroke-width: 3;
-  stroke-dasharray: 2 6;
-}
-.boundary--railing line {
-  stroke: #f7f4ef;
-  stroke-width: 4;
-  stroke-dasharray: 3 5;
-}
-.boundary--floor line {
-  stroke: var(--color-wall);
-  stroke-width: 8;
-}
 /* The reconstruction's zooms (ZOOM_MS in lib/reconstruction.ts); a cut with reduced motion. */
 .camera {
   transform-origin: 0 0;
   transition: transform 1.2s ease-in-out;
 }
-.coordinates {
-  transition: opacity 0.6s;
-}
-.coordinates--zoomed {
-  opacity: 0;
-}
 @media (prefers-reduced-motion: reduce) {
-  .camera,
-  .coordinates {
+  .camera {
     transition: none;
   }
 }
@@ -307,16 +131,5 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
   fill: none;
   stroke: var(--color-blood-dark);
   stroke-width: 6;
-}
-.zone-label text {
-  /* Narrower than the typewriter font: names must fit their room. */
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  fill: var(--color-ink);
-  paint-order: stroke;
-  stroke: rgb(255 255 255 / 85%);
-  stroke-width: 3px;
-  stroke-linejoin: round;
 }
 </style>

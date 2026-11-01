@@ -1,6 +1,6 @@
 import type { Cell } from '@/lib/grid'
 import type { Placements } from '@/lib/rules'
-import { parseCellName } from '@/lib/solution'
+import { parseCellName } from '@/lib/geometry'
 
 /**
  * Looks a person takes on during the reconstruction: asleep (floating "Z"),

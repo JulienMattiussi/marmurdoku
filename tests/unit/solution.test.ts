@@ -1,23 +1,7 @@
-import { FURNITURE, ZONE_GRID } from '@/data/office'
 import { MURDERER, PEOPLE, VICTIM } from '@/data/people'
 import { SOLUTION } from '@/data/solution'
-import { ZONES } from '@/data/zones'
-import { placeableGrid } from '@/lib/furniture'
-import { parseZoneGrid } from '@/lib/grid'
-import { parseCellName, solutionProblems } from '@/lib/solution'
-
-const zones = parseZoneGrid(ZONE_GRID, ZONES)
-const placeable = placeableGrid(zones, FURNITURE)
-const placements = Object.fromEntries(
-  Object.entries(SOLUTION).map(([id, name]) => [id, parseCellName(name)]),
-)
-
-describe('parseCellName', () => {
-  it('reads the column letter and the row number', () => {
-    expect(parseCellName('B3')).toEqual({ row: 2, col: 1 })
-    expect(parseCellName('T20')).toEqual({ row: 19, col: 19 })
-  })
-})
+import { brokenRules } from '@/lib/game'
+import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
 
 describe('the solution', () => {
   it('places every person of the cast', () => {
@@ -25,27 +9,16 @@ describe('the solution', () => {
   })
 
   it('breaks no rule', () => {
-    expect(solutionProblems(placements, zones, placeable, VICTIM, MURDERER)).toEqual([])
+    expect(brokenRules(PUZZLE, SOLUTION_PLACEMENTS)).toEqual([])
   })
-})
 
-describe('solutionProblems', () => {
-  it('reports a shared column and an empty one', () => {
-    const tiny = parseZoneGrid(
-      ['AA', 'AA'],
-      [{ code: 'A', id: 'a', name: 'A', floor: 'oak', level: 'ground' }],
-    )
-    const problems = solutionProblems(
-      { v: { row: 0, col: 0 }, m: { row: 1, col: 0 } },
-      tiny,
-      [
-        [true, true],
-        [true, true],
-      ],
-      'v',
-      'm',
-    )
-    expect(problems).toContain('2 personne(s) sur la colonne 1')
-    expect(problems).toContain('0 personne(s) sur la colonne 2')
+  // The story, which the rules never know: the culprit alone with the victim in their room.
+  it('leaves the culprit alone with the victim', () => {
+    const zoneOf = (id: string) => {
+      const { row, col } = SOLUTION_PLACEMENTS[id]!
+      return PUZZLE.board.zones[row]![col]
+    }
+    const there = Object.keys(SOLUTION_PLACEMENTS).filter((id) => zoneOf(id) === zoneOf(VICTIM))
+    expect(there.sort()).toEqual([MURDERER, VICTIM].sort())
   })
 })

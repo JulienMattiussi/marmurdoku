@@ -1,16 +1,39 @@
-# Marmerdoku
+<p align="center">
+  <a href="https://marmerdoku.vercel.app">
+    <img src="public/og.png" alt="Marmerdoku : meurtre chez Marmelab" width="720" />
+  </a>
+</p>
 
-**Meurtre chez Marmelab.** Un niveau de Murdoku jouable dans le navigateur :
-la grille est le plan des bureaux, les suspects sont les employés. Place chaque
-personne, une par ligne et par colonne, en respectant les indices, et démasque
-le coupable.
+<h3 align="center">Quelqu'un a été retrouvé sans vie dans les bureaux de Marmelab.</h3>
 
-![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)
-![Vue 3](https://img.shields.io/badge/Vue-3-42b883.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)
-![Vite](https://img.shields.io/badge/Vite-646cff.svg)
+<p align="center">
+  Vingt suspects. Un plan. Des témoignages qui ne mentent pas.<br />
+  À toi de reconstituer la scène, et de démasquer le coupable.
+</p>
 
-## Démarrer
+<p align="center">
+  <a href="https://marmerdoku.vercel.app"><strong>🔪 Ouvrir l'enquête</strong></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/licence-MIT-b0121e.svg" alt="Licence MIT" />
+  <img src="https://img.shields.io/badge/Vue-3-42b883.svg" alt="Vue 3" />
+  <img src="https://img.shields.io/badge/TypeScript-strict-3178c6.svg" alt="TypeScript strict" />
+  <img src="https://img.shields.io/badge/100%25-front--end-f2c418.svg" alt="100% front-end" />
+</p>
+
+---
+
+**Marmerdoku** est un niveau de Murdoku, le casse-tête
+de logique où l'on résout un meurtre case par case. Le plateau est le vrai plan
+des bureaux de Marmelab, les suspects sont ceux qui y travaillent. Une seule
+solution, et elle se trouve par la déduction, jamais au hasard.
+
+- 🗺️ Un plan des bureaux dessiné à la main, meuble par meuble
+- 🕵️ Des carnets de notes, une gomme qui remonte le temps, des dossiers à sauvegarder
+- 🎬 Une surprise pour qui résout l'affaire
+
+## Mener l'enquête en local
 
 ```sh
 nvm use
@@ -18,9 +41,12 @@ make install
 make start   # http://localhost:2020
 ```
 
-`make help` liste toutes les commandes ; `make check` lance build, lint,
-typecheck, knip et tests.
+`make help` liste toutes les commandes, `make check` vérifie tout (build, lint,
+types, code mort, tests).
 
-## Licence
+## Crédits
+
+Plan redessiné d'après la carte de [Marmemap](https://github.com/JulienMattiussi/Marmemap), avatars
+créés avec [SP-Studio](https://www.sp-studio.de/). Les suspects ont accepté de l'être.
 
 MIT, voir [LICENSE](./LICENSE).

@@ -106,8 +106,8 @@ export const RECONSTRUCTION: Scene[] = [
   },
   {
     cast: ['thiery', 'francois'],
-    // Thiery in the shot from the start, where he stands.
-    frame: ['R2'],
+    // The Aquarium from M to R: Thiery in the shot from the start, where he stands.
+    shot: { row: 0, col: 11.75, size: 6.5 },
     beats: [
       { say: { person: 'francois', text: 'Non Thiery, que fais-tu ?' } },
       {

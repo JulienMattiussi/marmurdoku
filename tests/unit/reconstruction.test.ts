@@ -1,7 +1,7 @@
 import { PEOPLE } from '@/data/people'
 import { RECONSTRUCTION } from '@/data/reconstruction'
 import { frameAround, timeline, wrap, ZOOM_MS } from '@/lib/reconstruction'
-import { parseCellName } from '@/lib/solution'
+import { parseCellName } from '@/lib/geometry'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
 
 const SIZE = PUZZLE.board.size

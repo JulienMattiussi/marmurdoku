@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import BloodDrip from '@/components/BloodDrip.vue'
 import CastPanel from '@/components/CastPanel.vue'
-import CrossIcon from '@/components/CrossIcon.vue'
-import SavesDialog from '@/components/SavesDialog.vue'
+import DragGhost from '@/components/DragGhost.vue'
+import GameTitle from '@/components/GameTitle.vue'
 import OfficeMap from '@/components/OfficeMap.vue'
+import ReconstructionControls from '@/components/ReconstructionControls.vue'
+import SavesDialog from '@/components/SavesDialog.vue'
 import VerdictOverlay from '@/components/VerdictOverlay.vue'
-import { useGame } from '@/composables/useGame'
 import { useDrag } from '@/composables/useDrag'
+import { useGame } from '@/composables/useGame'
 import { useReconstruction } from '@/composables/useReconstruction'
 import { useSaves } from '@/composables/useSaves'
-import { avatarUrl } from '@/data/people'
 import { RECONSTRUCTION } from '@/data/reconstruction'
 import { CROSS, emptyGame } from '@/lib/game'
 import { timeline } from '@/lib/reconstruction'
@@ -90,22 +90,11 @@ const onCross = () => {
         @cell-click="onCellClick"
         @cell-press="onCellPress"
       />
-      <template v-if="reconstruction.stage.value === 'playing'">
-        <!-- A click anywhere on the map moves on to the next still. -->
-        <button
-          type="button"
-          class="absolute inset-0 cursor-pointer"
-          aria-label="Image suivante de la reconstitution"
-          @click="reconstruction.next"
-        />
-        <button
-          type="button"
-          class="bg-ink/85 text-tape hover:bg-blood hover:text-bone absolute top-2 right-2 rounded-sm px-3 py-1 text-sm font-bold tracking-widest uppercase shadow-lg"
-          @click="reconstruction.skip"
-        >
-          Passer ⏭
-        </button>
-      </template>
+      <ReconstructionControls
+        v-if="reconstruction.stage.value === 'playing'"
+        @next="reconstruction.next"
+        @skip="reconstruction.skip"
+      />
       <VerdictOverlay
         v-else-if="game.verdict.value"
         :verdict="game.verdict.value"
@@ -125,14 +114,7 @@ const onCross = () => {
           </p>
         </div>
         <div class="flex flex-wrap items-start gap-x-6 gap-y-2">
-          <div class="w-fit shrink-0">
-            <h1
-              class="font-horror text-blood-bright short:text-5xl text-6xl leading-none drop-shadow-[0_3px_0_#000]"
-            >
-              Marmerdoku
-            </h1>
-            <BloodDrip class="text-blood-bright short:h-5 -mt-1 h-7 w-full" />
-          </div>
+          <GameTitle />
           <p class="short:text-sm min-w-0 flex-1 basis-64 text-base leading-snug">
             <span class="text-tape">Meurtre chez Marmelab.</span>
             Quelqu’un a été retrouvé sans vie dans les bureaux. Place chaque suspect, un par ligne
@@ -166,19 +148,6 @@ const onCross = () => {
       @remove="saves.remove"
       @close="showSaves = false"
     />
-    <template v-if="drag.dragged.value">
-      <CrossIcon
-        v-if="drag.dragged.value.item === CROSS"
-        class="text-blood-bright pointer-events-none fixed z-10 size-12 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg"
-        :style="{ left: `${drag.dragged.value.x}px`, top: `${drag.dragged.value.y}px` }"
-      />
-      <img
-        v-else
-        :src="avatarUrl(drag.dragged.value.item)"
-        alt=""
-        class="pointer-events-none fixed z-10 size-14 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg"
-        :style="{ left: `${drag.dragged.value.x}px`, top: `${drag.dragged.value.y}px` }"
-      />
-    </template>
+    <DragGhost v-if="drag.dragged.value" v-bind="drag.dragged.value" />
   </main>
 </template>

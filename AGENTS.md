@@ -39,24 +39,35 @@ Zéro dépendance runtime en dehors de Vue et de la police.
 
 ```
 public/
-├── avatars/                  # Avatars des 20 personnages (160px, copiés de marmelab-en-voyage)
-└── favicon.svg               # Logo Marmelab (favicon de la homepage) recoloré en rouge
+├── avatars/                  # Avatars des 20 personnages (160px, depuis ~/Images/Avatars/*-sp2.png)
+├── favicon.svg               # Logo Marmelab (favicon de la homepage) recoloré en rouge
+├── favicon.png, apple-touch-icon.png # Icônes PNG tirées du SVG (`make icons`)
+├── og.png                    # Image de partage 1200x630 (`make og`)
+└── robots.txt, sitemap.xml, site.webmanifest
+og.html                       # Page de l'image de partage, rendue par `make og` (hors build)
 src/
 ├── components/
-│   ├── OfficeMap.vue         # Le plan en SVG : sols, meubles, quadrillage, murs, noms des pièces
+│   ├── OfficeMap.vue         # La carte : le plan, puis les couches du joueur ou l'image de la reconstitution, sous la caméra
+│   ├── MapPlan.vue           # Le plan seul : sols (et cour prolongée sous la carte), meubles, quadrillage, murs, noms des pièces
+│   ├── MapCoordinates.vue    # Lettres et numéros autour de la carte, effacés pendant un zoom
 │   ├── FloorPatterns.vue     # Motifs SVG des sols (un par FloorKind) et ombre portée
 │   ├── FurniturePiece.vue    # Place un meuble sur la grille, l'oriente, choisit son sprite
 │   ├── PeopleLayer.vue       # Avatars sur leurs cases, halo blanc qui suit leur contour ; marches et effets de la reconstitution
-│   ├── GameToolbar.vue       # Vérifier, Placer / Noter, annuler / refaire, Sauvegardes
-│   ├── SavesDialog.vue       # Fenêtre des sauvegardes : nommer, charger, supprimer
 │   ├── NotesLayer.vue        # Positions notées : initiale sur la couleur du suspect, 3x3 par case
 │   ├── CellLayer.vue         # Couche du joueur : croix, survol, sélection, infobulle, cibles de clic et de dépôt (data-cell)
-│   ├── BloodDrip.vue         # Coulure de sang sous le titre
-│   ├── VerdictOverlay.vue    # Message devant la carte : « Raté ! », invitation à la reconstitution, « Affaire classée »
 │   ├── ReconstructionLayer.vue # Reconstitution : bulles, zzz, notes
-│   ├── RulesDialog.vue       # Fenêtre des règles (bouton « Règles » du rapport d'enquête)
+│   ├── ReconstructionControls.vue # Pendant la reconstitution : clic pour passer à l'image suivante, « Passer »
+│   ├── VerdictOverlay.vue    # Message devant la carte : « Raté ! », invitation à la reconstitution, « Affaire classée »
+│   ├── GameTitle.vue         # Le titre et sa coulure de sang (en grand sur l'image de partage)
+│   ├── BloodDrip.vue         # Coulure de sang sous le titre
+│   ├── CastPanel.vue         # Rapport d'enquête, « Les suspects », barre d'outils et fiches
+│   ├── CastCard.vue          # Fiche du panneau : clic pour choisir, appui pour glisser
+│   ├── SuspectCard.vue       # Fiche d'un suspect : avatar, nom sur sa couleur, indices, case ou nombre de notes
+│   ├── GameToolbar.vue       # Vérifier, Placer / Noter, annuler / refaire, Sauvegardes
+│   ├── DragGhost.vue         # Ce qui suit le pointeur pendant un glisser : l'avatar ou la croix
 │   ├── CrossIcon.vue         # La croix de la fiche Croix et de son glisser
-│   ├── CastPanel.vue         # « (02) Les personnages » : les 20 avatars, à droite de la carte
+│   ├── SavesDialog.vue       # Fenêtre des sauvegardes : nommer, charger, supprimer
+│   ├── RulesDialog.vue       # Fenêtre des règles (bouton « Règles » du rapport d'enquête)
 │   └── furniture/            # Sprites SVG : sièges, tables et revêtements, décor
 ├── composables/
 │   ├── useGame.ts            # La partie : historique, sélection, mode, verdict, raccourcis
@@ -74,7 +85,6 @@ src/
 │   ├── grid.ts               # Types Zone / Cell, lecture de la grille des zones
 │   ├── furniture.ts          # Types de meubles, cases couvertes, cases occupables
 │   ├── walls.ts              # Segments entre zones (mur, clôture, garde-corps, plancher)
-│   ├── solution.ts           # Lecture des coordonnées, règles enfreintes par une solution
 │   ├── board.ts              # Plateau pour les règles : zones, cases plaçables, meubles par case, « près de »
 │   ├── rules.ts              # Règles des indices (par personne, globales, meurtre) : ok / enfreinte / ouverte
 │   ├── solver.ts             # Vérifie un placement complet (puzzleStatus), cherche les solutions (solve)
@@ -83,14 +93,17 @@ src/
 │   ├── history.ts            # Annuler / refaire sur des états immuables
 │   ├── saves.ts              # Liste des sauvegardes : ajout, retrait, lecture tolérante
 │   ├── reconstruction.ts     # Script de la reconstitution en suite d'images : caméra, positions, bulles
-│   └── geometry.ts           # Taille d'une case, lettres des colonnes
+│   ├── tooltips.ts           # Texte des infobulles : qui se tient sur la case, meubles, moquette
+│   └── geometry.ts           # Taille d'une case, coordonnées de la carte (« B3 ») dans les deux sens
 ├── puzzle.ts                 # Le niveau assemblé depuis data/ (plateau, personnages, indices, solution)
 ├── App.vue                   # La page
 ├── index.css                 # Import Tailwind, thème, styles des composants
 ├── main.ts                   # Point d'entrée
 └── vite-env.d.ts
 tools/
-└── solve.test.ts             # `make solve` : diagnostic d'unicité (config vitest.solve.config.ts)
+├── solve.test.ts             # `make solve` : diagnostic d'unicité (config vitest.solve.config.ts)
+├── og.ts                     # Point d'entrée de og.html
+└── OgCard.vue                # L'image de partage : titre, accroche, plan vide, ruban de police
 tests/
 ├── setup.ts                  # jest-dom + matchMedia pour jsdom
 ├── unit/                     # Vitest : src/lib/
@@ -135,10 +148,10 @@ tests/
 
 ## Solution et mode debug
 
-- `data/solution.ts` place chaque personnage (une personne par ligne et par
-  colonne, sur une case plaçable ; le coupable seul avec la victime dans sa
-  pièce). `tests/unit/solution.test.ts` vérifie ces règles avec
-  `solutionProblems`.
+- `data/solution.ts` place chaque personnage. `tests/unit/solution.test.ts`
+  vérifie qu'elle n'enfreint aucune règle (`brokenRules`, comme le bouton
+  « Vérifier ») et qu'elle raconte la bonne histoire : le coupable seul avec
+  la victime dans sa pièce, ce que les règles, elles, ignorent.
 - **Mode debug** : `?debug` dans l'URL (http://localhost:2020/?debug) affiche
   la solution et hache en rouge les cases non plaçables, sans encart dans la
   page ; les règles enfreintes partent dans la console.
@@ -247,6 +260,21 @@ tests/
   traverse pas les murs : la case voisine doit être dans la même pièce
   (`isNear`).
 
+## SEO et partage
+
+- Publié sur https://marmerdoku.vercel.app. `index.html` porte des
+  `%SITE_URL%` remplacés au build (`vite.config.ts`) : `SITE_URL`, sinon
+  l'adresse de production Vercel, sinon celle-ci. Les réseaux refusent les
+  URL relatives d'`og:image`.
+- Balises : description, canonical, Open Graph, Twitter, données structurées
+  `VideoGame`, manifeste, icônes ; `robots.txt` et `sitemap.xml` dans
+  `public/`.
+- L'image de partage (`tools/OgCard.vue`) réutilise les vrais composants
+  (`GameTitle`, `MapPlan`) : `make og` la régénère après une retouche du plan
+  ou du titre. Elle ne montre ni personne ni indice.
+- Ni le README ni les métadonnées ne dévoilent la victime, le coupable ou
+  les indices.
+
 ## Charte graphique
 
 Style « murder party » (les variables sont dans le `@theme` de `index.css`) :
@@ -319,6 +347,8 @@ sans empattement étroite, pour tenir dans leur pièce.
 | `make typecheck` | Vérifie les types |
 | `make test` | Tests unitaires et composants |
 | `make solve` | Dit si les indices ne mènent qu'à `data/solution.ts` ; sinon, montre une autre solution valide |
+| `make og` | Régénère `public/og.png` depuis `og.html` (Chrome) |
+| `make icons` | Régénère les icônes PNG depuis `public/favicon.svg` (ImageMagick) |
 | `make fix` | Format + lint |
 | `make check` | build + lint + typecheck + knip + tests |
 | `make clean` | Supprime `dist`, `node_modules`, `coverage` |

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { colorOf, initialOf, inkOn, PEOPLE } from '@/data/people'
-import { CELL } from '@/lib/geometry'
+import { CELL, parseCellName } from '@/lib/geometry'
 import type { Cell } from '@/lib/grid'
-import { parseCellName } from '@/lib/solution'
 
 /**
  * The positions the player noted: in each cell, one disc per suspect, their

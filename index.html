@@ -4,13 +4,70 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Marmerdoku : meurtre chez Marmelab</title>
+    <title>Marmerdoku : meurtre chez Marmelab, un jeu d'enquête et de logique</title>
     <meta
       name="description"
-      content="Un niveau de Murdoku dans les bureaux de Marmelab : place chaque employé et démasque le coupable."
+      content="Quelqu'un a été retrouvé sans vie dans les bureaux de Marmelab. Un Murdoku jouable dans le navigateur : vingt suspects, un plan, des témoignages, et un coupable à démasquer par la logique."
     />
     <meta name="author" content="YavaDeus" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="%SITE_URL%/" />
+
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="theme-color" content="#140b0d" />
+    <meta name="apple-mobile-web-app-title" content="Marmerdoku" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Marmerdoku" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:title" content="Marmerdoku : meurtre chez Marmelab" />
+    <meta
+      property="og:description"
+      content="Quelqu'un a été retrouvé sans vie dans les bureaux. Vingt suspects, un plan, des témoignages : à toi de démasquer le coupable."
+    />
+    <meta property="og:image" content="%SITE_URL%/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Le titre Marmerdoku en lettres d'horreur dégoulinantes de sang, « Meurtre chez Marmelab », le plan des bureaux vu de dessus, et un ruban de police « Scène de crime, ne pas franchir »."
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Marmerdoku : meurtre chez Marmelab" />
+    <meta
+      name="twitter:description"
+      content="Quelqu'un a été retrouvé sans vie dans les bureaux. Vingt suspects, un plan, des témoignages : à toi de démasquer le coupable."
+    />
+    <meta name="twitter:image" content="%SITE_URL%/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Le titre Marmerdoku en lettres d'horreur dégoulinantes de sang, « Meurtre chez Marmelab », le plan des bureaux vu de dessus, et un ruban de police « Scène de crime, ne pas franchir »."
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Marmerdoku",
+        "url": "%SITE_URL%/",
+        "description": "Un Murdoku jouable dans le navigateur, dans les bureaux de Marmelab : place les suspects d'après les témoignages et démasque le coupable.",
+        "inLanguage": "fr-FR",
+        "genre": ["Puzzle", "Logique", "Enquête"],
+        "gamePlatform": "Navigateur web",
+        "applicationCategory": "Game",
+        "operatingSystem": "Tous",
+        "image": "%SITE_URL%/og.png",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "author": { "@type": "Person", "name": "YavaDeus", "url": "https://yavadeus.dev/" }
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

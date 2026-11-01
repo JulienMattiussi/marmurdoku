@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import type { Cell } from '@/lib/grid'
-import { parseCellName } from '@/lib/solution'
+import { parseCellName } from '@/lib/geometry'
 
 /** Pixels the pointer must travel before a press becomes a drag (below that, it is a click). */
 const THRESHOLD = 6

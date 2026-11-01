@@ -34,6 +34,7 @@
     "vitest.solve.config.ts",
     "tests/**/*.ts",
     "tools/**/*.ts",
+    "tools/**/*.vue",
     "src/**/*.vue",
     "src/**/*.ts"
   ]

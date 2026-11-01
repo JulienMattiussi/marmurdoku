@@ -4,7 +4,7 @@ import { PEOPLE } from '@/data/people'
 import { SOLUTION } from '@/data/solution'
 import { ZONES } from '@/data/zones'
 import { buildBoard } from '@/lib/board'
-import { parseCellName } from '@/lib/solution'
+import { parseCellName } from '@/lib/geometry'
 import type { Puzzle } from '@/lib/solver'
 
 /**

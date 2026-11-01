@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
-import { CELL, cellName } from '@/lib/geometry'
-import { parseCellName } from '@/lib/solution'
+import { CELL, cellName, parseCellName } from '@/lib/geometry'
 import type { Tool } from '@/lib/game'
 import type { Cell } from '@/lib/grid'
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { CLUES, GENERAL_CLUES } from '@/data/clues'
-import { avatarUrl, colorOf, inkOn, PEOPLE } from '@/data/people'
 import { ref } from 'vue'
+import CastCard from '@/components/CastCard.vue'
 import CrossIcon from '@/components/CrossIcon.vue'
 import GameToolbar from '@/components/GameToolbar.vue'
 import RulesDialog from '@/components/RulesDialog.vue'
-import { cellName } from '@/lib/geometry'
+import SuspectCard from '@/components/SuspectCard.vue'
+import { GENERAL_CLUES } from '@/data/clues'
+import { PEOPLE } from '@/data/people'
 import { CROSS, type Mode } from '@/lib/game'
 import type { Cell } from '@/lib/grid'
 
@@ -95,71 +96,29 @@ const showRules = ref(false)
       class="short:gap-1 grid grid-cols-2 gap-2 p-1 sm:grid-cols-3 lg:min-h-0 lg:overflow-y-auto scrollbar-blood"
     >
       <li v-for="person in PEOPLE" :key="person.id">
-        <button
-          type="button"
-          class="paper short:py-0.5 flex h-full w-full cursor-grab touch-none items-center gap-2 rounded-sm px-2 py-1 text-left transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
-          :class="{ 'ring-blood-bright -rotate-1 ring-4': active === person.id }"
-          :aria-pressed="active === person.id"
-          @click="emit('select', person.id)"
-          @pointerdown="emit('press', person.id, $event)"
-        >
-          <img
-            :src="avatarUrl(person.id)"
-            alt=""
-            draggable="false"
-            class="size-9 shrink-0"
-            :class="{ 'opacity-35 grayscale': placements[person.id] }"
-          />
-          <span class="short:gap-0.5 flex min-w-0 flex-col gap-1 leading-tight">
-            <span class="truncate text-sm font-bold">
-              <!-- The name on the suspect's color: the legend of their notes on the map. -->
-              <span
-                class="inline-flex h-[1.45em] items-center rounded-full px-2 pt-[0.12em] leading-none"
-                :class="{ 'opacity-50 grayscale': placements[person.id] }"
-                :style="{ backgroundColor: colorOf(person.id), color: inkOn(person.id) }"
-                >{{ person.name }}</span
-              >
-              <span
-                v-if="!placements[person.id] && notes[person.id]?.length"
-                class="ml-1 text-xs font-normal"
-                :class="notes[person.id]!.length === 1 ? 'text-blood font-bold' : 'opacity-70'"
-                :title="notes[person.id]!.length === 1 ? 'Une seule position notée' : undefined"
-              >
-                · {{ notes[person.id]!.length }} note{{ notes[person.id]!.length > 1 ? 's' : '' }}
-              </span>
-              <span
-                v-if="placements[person.id]"
-                class="bg-blood text-bone ml-1 inline-flex h-[1.35em] items-center rounded-sm px-1 pt-[0.15em] align-[0.1em] text-xs leading-none"
-              >
-                {{ cellName(placements[person.id]!) }}
-              </span>
-            </span>
-            <span
-              v-for="clue in CLUES[person.id]"
-              :key="clue.text"
-              class="text-[11px] leading-tight opacity-80"
-            >
-              {{ clue.text }}
-            </span>
-          </span>
-        </button>
+        <SuspectCard
+          :person="person"
+          :pressed="active === person.id"
+          :cell="placements[person.id]"
+          :notes="notes[person.id]?.length ?? 0"
+          @pick="emit('select', person.id)"
+          @press="emit('press', person.id, $event)"
+        />
       </li>
       <!-- In the cast's free slot: the cross tool, pressed whenever nobody is picked or dragged. -->
       <li>
-        <button
-          type="button"
-          class="bg-ink text-paper short:py-0.5 flex h-full w-full cursor-grab touch-none items-center gap-2 rounded-sm px-2 py-1 text-left shadow-lg transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
-          :class="{ 'ring-blood-bright -rotate-1 ring-4': active === CROSS }"
-          :aria-pressed="active === CROSS"
-          @click="emit('cross')"
-          @pointerdown="emit('press', CROSS, $event)"
+        <CastCard
+          dark
+          :pressed="active === CROSS"
+          @pick="emit('cross')"
+          @press="emit('press', CROSS, $event)"
         >
-          <CrossIcon class="text-blood-bright size-9 shrink-0 p-1.5" />
-          <span class="short:gap-0.5 flex min-w-0 flex-col gap-1 leading-tight">
-            <span class="text-sm font-bold">Croix</span>
-            <span class="text-[11px] leading-tight opacity-80">Marque un emplacement vide</span>
-          </span>
-        </button>
+          <template #icon>
+            <CrossIcon class="text-blood-bright size-9 shrink-0 p-1.5" />
+          </template>
+          <span class="text-sm font-bold">Croix</span>
+          <span class="text-[11px] leading-tight opacity-80">Marque un emplacement vide</span>
+        </CastCard>
       </li>
     </ul>
     <RulesDialog v-if="showRules" @close="showRules = false" />

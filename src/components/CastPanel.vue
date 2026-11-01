@@ -2,10 +2,11 @@
 import { CLUES, GENERAL_CLUES } from '@/data/clues'
 import { avatarUrl, colorOf, inkOn, PEOPLE } from '@/data/people'
 import { ref } from 'vue'
+import CrossIcon from '@/components/CrossIcon.vue'
 import GameToolbar from '@/components/GameToolbar.vue'
 import RulesDialog from '@/components/RulesDialog.vue'
 import { cellName } from '@/lib/geometry'
-import type { Mode } from '@/lib/game'
+import { CROSS, type Mode } from '@/lib/game'
 import type { Cell } from '@/lib/grid'
 
 /**
@@ -13,7 +14,8 @@ import type { Cell } from '@/lib/grid'
  * picks a person (one at a time); pressing and moving drags them to a cell.
  */
 defineProps<{
-  selected: string | null
+  /** The pressed card: the picked or dragged suspect, or `CROSS`. */
+  active: string
   placements: Record<string, Cell>
   /** Positions noted per suspect: their count shows on each card. */
   notes: Record<string, string[]>
@@ -52,11 +54,17 @@ const showRules = ref(false)
           class="bg-ink text-tape hover:bg-blood hover:text-bone ml-auto flex items-center gap-1.5 rounded-sm px-3 py-0.5 text-sm font-bold tracking-widest uppercase shadow-md transition-colors"
           @click="showRules = true"
         >
-          <span
-            class="border-tape grid size-4 place-items-center rounded-full border text-[11px] leading-none"
-            aria-hidden="true"
-            >?</span
-          >
+          <!-- Drawn rather than typed: the typewriter font sets "?" off-center in its circle. -->
+          <svg viewBox="0 0 16 16" class="size-4 shrink-0" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="7.25" stroke="currentColor" stroke-width="1.2" />
+            <path
+              d="M5.9 6.1a2.1 2.1 0 1 1 3 1.9c-.6.3-.9.7-.9 1.3v.4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+            <circle cx="8" cy="11.7" r="0.9" fill="currentColor" />
+          </svg>
           Règles
         </button>
       </div>
@@ -89,9 +97,9 @@ const showRules = ref(false)
       <li v-for="person in PEOPLE" :key="person.id">
         <button
           type="button"
-          class="paper short:py-0.5 flex h-full w-full touch-none items-center gap-2 rounded-sm px-2 py-1 text-left transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
-          :class="{ 'ring-blood-bright -rotate-1 ring-4': selected === person.id }"
-          :aria-pressed="selected === person.id"
+          class="paper short:py-0.5 flex h-full w-full cursor-grab touch-none items-center gap-2 rounded-sm px-2 py-1 text-left transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
+          :class="{ 'ring-blood-bright -rotate-1 ring-4': active === person.id }"
+          :aria-pressed="active === person.id"
           @click="emit('select', person.id)"
           @pointerdown="emit('press', person.id, $event)"
         >
@@ -136,30 +144,22 @@ const showRules = ref(false)
           </span>
         </button>
       </li>
-      <!-- In the cast's free slot: the cross tool, pressed whenever nobody is picked. -->
+      <!-- In the cast's free slot: the cross tool, pressed whenever nobody is picked or dragged. -->
       <li>
         <button
           type="button"
-          class="bg-ink text-paper short:py-0.5 flex h-full w-full items-center gap-2 rounded-sm px-2 py-1 text-left shadow-lg transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
-          :class="{ 'ring-blood-bright -rotate-1 ring-4': !selected }"
-          :aria-pressed="!selected"
+          class="bg-ink text-paper short:py-0.5 flex h-full w-full cursor-grab touch-none items-center gap-2 rounded-sm px-2 py-1 text-left shadow-lg transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
+          :class="{ 'ring-blood-bright -rotate-1 ring-4': active === CROSS }"
+          :aria-pressed="active === CROSS"
           @click="emit('cross')"
+          @pointerdown="emit('press', CROSS, $event)"
         >
-          <svg
-            viewBox="0 0 16 16"
-            class="text-blood-bright size-9 shrink-0 p-1.5"
-            aria-hidden="true"
-          >
-            <path
-              d="M3 3l10 10M13 3L3 13"
-              stroke="currentColor"
-              stroke-width="2.4"
-              stroke-linecap="round"
-            />
-          </svg>
+          <CrossIcon class="text-blood-bright size-9 shrink-0 p-1.5" />
           <span class="short:gap-0.5 flex min-w-0 flex-col gap-1 leading-tight">
             <span class="text-sm font-bold">Croix</span>
-            <span class="text-[11px] leading-tight opacity-80">Un clic barre une case</span>
+            <span class="text-[11px] leading-tight opacity-80"
+              >Barre une case, d’un clic ou en la glissant</span
+            >
           </span>
         </button>
       </li>

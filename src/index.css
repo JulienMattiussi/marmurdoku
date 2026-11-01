@@ -78,4 +78,10 @@
   .scrollbar-blood::-webkit-scrollbar-thumb:hover {
     background: var(--color-blood-bright);
   }
+
+  /* While a suspect or the cross is dragged, the hand holds it everywhere, over the map's cursors too. */
+  .dragging,
+  .dragging * {
+    cursor: grabbing !important;
+  }
 }

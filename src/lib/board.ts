@@ -30,14 +30,20 @@ const neighbors = ({ row, col }: Cell, size: number): Cell[] =>
 
 /**
  * Distance "as the crow flies" from a cell to the closest cell holding one of
- * these kinds, center to center, in cells. Infinity if there is none.
+ * these kinds, center to center, in cells; in rows only with `rowsOnly`.
+ * Infinity if there is none.
  */
-export const distanceTo = (board: Board, { row, col }: Cell, kinds: FurnitureKind[]) => {
+export const distanceTo = (
+  board: Board,
+  { row, col }: Cell,
+  kinds: FurnitureKind[],
+  rowsOnly = false,
+) => {
   let best = Infinity
   board.kinds.forEach((line, r) =>
     line.forEach((here, c) => {
       if (here.some((kind) => kinds.includes(kind))) {
-        best = Math.min(best, Math.hypot(r - row, c - col))
+        best = Math.min(best, rowsOnly ? Math.abs(r - row) : Math.hypot(r - row, c - col))
       }
     }),
   )

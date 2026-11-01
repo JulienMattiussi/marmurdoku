@@ -1,4 +1,4 @@
-import { clickCell, clickEffect, dropPerson, emptyGame, isSolved } from '@/lib/game'
+import { CROSS, clickCell, clickEffect, dropOn, emptyGame, isSolved } from '@/lib/game'
 import { record, redo, startHistory, undo } from '@/lib/history'
 import { addSave, defaultName, parseSaves, removeSave } from '@/lib/saves'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
@@ -20,9 +20,22 @@ describe('clickCell', () => {
     expect(state.placements).toEqual({ karen: B2 })
   })
 
-  it('empties a cell taken by a person', () => {
+  it('places the picked person over a cross', () => {
+    const state = clickCell(clickCell(emptyGame(), A1, null), A1, 'karen')
+    expect(state.placements).toEqual({ karen: A1 })
+    expect(state.crosses).toEqual([])
+  })
+
+  it('takes the picked person off their own cell, and replaces anyone else', () => {
     const state = clickCell(emptyGame(), A1, 'karen')
-    expect(clickCell(state, A1, null).placements).toEqual({})
+    expect(clickCell(state, A1, 'karen').placements).toEqual({})
+    expect(clickCell(state, A1, 'julio').placements).toEqual({ julio: A1 })
+  })
+
+  it('crosses out a cell over the person standing there when nobody is picked', () => {
+    const state = clickCell(clickCell(emptyGame(), A1, 'karen'), A1, null)
+    expect(state.placements).toEqual({})
+    expect(state.crosses).toEqual(['A1'])
   })
 
   it('notes and unnotes a cell for the picked suspect in note mode', () => {
@@ -50,14 +63,22 @@ describe('placing', () => {
   })
 })
 
-describe('dropPerson', () => {
+describe('dropOn', () => {
   it('replaces a person or a cross already on the cell', () => {
-    let state = dropPerson(emptyGame(), 'karen', A1)
-    state = dropPerson(state, 'julio', A1)
+    let state = dropOn(emptyGame(), 'karen', A1)
+    state = dropOn(state, 'julio', A1)
     expect(state.placements).toEqual({ julio: A1 })
-    state = dropPerson(clickCell(state, B2, null), 'karen', B2)
+    state = dropOn(clickCell(state, B2, null), 'karen', B2)
     expect(state.crosses).toEqual([])
     expect(state.placements).toEqual({ julio: A1, karen: B2 })
+  })
+
+  it('drops the cross over a person, clearing the cell’s notes', () => {
+    let state = clickCell(dropOn(emptyGame(), 'karen', A1), B2, 'julio', 'note')
+    state = dropOn(dropOn(state, CROSS, A1), CROSS, B2)
+    expect(state.placements).toEqual({})
+    expect(state.crosses).toEqual(['A1', 'B2'])
+    expect(state.notes).toEqual({ julio: [] })
   })
 })
 

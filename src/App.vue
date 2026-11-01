@@ -2,14 +2,15 @@
 import { computed, ref } from 'vue'
 import BloodDrip from '@/components/BloodDrip.vue'
 import CastPanel from '@/components/CastPanel.vue'
+import CrossIcon from '@/components/CrossIcon.vue'
 import SavesDialog from '@/components/SavesDialog.vue'
 import OfficeMap from '@/components/OfficeMap.vue'
 import VerdictOverlay from '@/components/VerdictOverlay.vue'
 import { useGame } from '@/composables/useGame'
-import { usePersonDrag } from '@/composables/usePersonDrag'
+import { useDrag } from '@/composables/useDrag'
 import { useSaves } from '@/composables/useSaves'
 import { avatarUrl } from '@/data/people'
-import { emptyGame } from '@/lib/game'
+import { CROSS, emptyGame } from '@/lib/game'
 import type { Save } from '@/lib/saves'
 import type { Cell } from '@/lib/grid'
 import { puzzleStatus } from '@/lib/solver'
@@ -25,7 +26,7 @@ const game = useGame(
   PUZZLE,
   debug ? { ...emptyGame(), placements: { ...SOLUTION_PLACEMENTS } } : emptyGame(),
 )
-const drag = usePersonDrag(game.drop)
+const drag = useDrag(game.drop)
 
 const saves = useSaves()
 const showSaves = ref(false)
@@ -38,6 +39,9 @@ const selectedCell = computed(() =>
   game.selected.value ? (game.state.value.placements[game.selected.value] ?? null) : null,
 )
 
+/** A dragged suspect's card stays pressed during the drag, rather than the cross. */
+const activeCard = computed(() => drag.dragged.value?.item ?? game.selected.value ?? CROSS)
+
 const onCellClick = (cell: Cell) => {
   if (!drag.wasDragging()) game.click(cell)
 }
@@ -48,8 +52,11 @@ const onCellPress = (cell: Cell, event: PointerEvent) => {
 const onSelect = (person: string) => {
   if (!drag.wasDragging()) game.select(person)
 }
-const onPress = (person: string, event: PointerEvent) => {
-  if (!game.over.value) drag.press(person, event)
+const onPress = (item: string, event: PointerEvent) => {
+  if (!game.over.value) drag.press(item, event)
+}
+const onCross = () => {
+  if (!drag.wasDragging()) game.deselect()
 }
 </script>
 
@@ -98,7 +105,7 @@ const onPress = (person: string, event: PointerEvent) => {
         </div>
       </header>
       <CastPanel
-        :selected="game.selected.value"
+        :active="activeCard"
         :placements="game.state.value.placements"
         :notes="game.state.value.notes"
         :mode="game.mode.value"
@@ -109,7 +116,7 @@ const onPress = (person: string, event: PointerEvent) => {
         @press="onPress"
         @verify="game.verify"
         @mode="game.mode.value = $event"
-        @cross="game.deselect"
+        @cross="onCross"
         @undo="game.undo"
         @redo="game.redo"
         @saves="showSaves = true"
@@ -123,12 +130,19 @@ const onPress = (person: string, event: PointerEvent) => {
       @remove="saves.remove"
       @close="showSaves = false"
     />
-    <img
-      v-if="drag.dragged.value"
-      :src="avatarUrl(drag.dragged.value.person)"
-      alt=""
-      class="pointer-events-none fixed z-10 size-14 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg"
-      :style="{ left: `${drag.dragged.value.x}px`, top: `${drag.dragged.value.y}px` }"
-    />
+    <template v-if="drag.dragged.value">
+      <CrossIcon
+        v-if="drag.dragged.value.item === CROSS"
+        class="text-blood-bright pointer-events-none fixed z-10 size-12 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg"
+        :style="{ left: `${drag.dragged.value.x}px`, top: `${drag.dragged.value.y}px` }"
+      />
+      <img
+        v-else
+        :src="avatarUrl(drag.dragged.value.item)"
+        alt=""
+        class="pointer-events-none fixed z-10 size-14 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg"
+        :style="{ left: `${drag.dragged.value.x}px`, top: `${drag.dragged.value.y}px` }"
+      />
+    </template>
   </main>
 </template>

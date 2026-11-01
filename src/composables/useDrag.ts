@@ -6,12 +6,12 @@ import { parseCellName } from '@/lib/solution'
 const THRESHOLD = 6
 
 /**
- * Dragging a person with the pointer (mouse or touch), from the cast or from
- * the map. Cells are found under the pointer through their `data-cell`
- * attribute, so only the cells that carry one accept a drop.
+ * Dragging a person (by id) or the cross with the pointer (mouse or touch),
+ * from the cast or from the map. Cells are found under the pointer through
+ * their `data-cell` attribute, so only the cells that carry one accept a drop.
  */
-export const usePersonDrag = (onDrop: (person: string, cell: Cell) => void) => {
-  const dragged = ref<{ person: string; x: number; y: number } | null>(null)
+export const useDrag = (onDrop: (item: string, cell: Cell) => void) => {
+  const dragged = ref<{ item: string; x: number; y: number } | null>(null)
   const hoverCell = ref<Cell | null>(null)
   /** Set while the click that follows a drag must be ignored. */
   let justDragged = false
@@ -21,12 +21,13 @@ export const usePersonDrag = (onDrop: (person: string, cell: Cell) => void) => {
     return name ? parseCellName(name) : null
   }
 
-  const press = (person: string, event: PointerEvent) => {
+  const press = (item: string, event: PointerEvent) => {
     if (event.button !== 0) return
     const start = { x: event.clientX, y: event.clientY }
     const move = (e: PointerEvent) => {
       if (!dragged.value && Math.hypot(e.clientX - start.x, e.clientY - start.y) < THRESHOLD) return
-      dragged.value = { person, x: e.clientX, y: e.clientY }
+      dragged.value = { item, x: e.clientX, y: e.clientY }
+      document.documentElement.classList.add('dragging')
       hoverCell.value = cellUnder(e.clientX, e.clientY)
     }
     const release = () => {
@@ -34,7 +35,8 @@ export const usePersonDrag = (onDrop: (person: string, cell: Cell) => void) => {
       window.removeEventListener('pointerup', release)
       window.removeEventListener('pointercancel', release)
       if (!dragged.value) return
-      if (hoverCell.value) onDrop(person, hoverCell.value)
+      document.documentElement.classList.remove('dragging')
+      if (hoverCell.value) onDrop(item, hoverCell.value)
       dragged.value = null
       hoverCell.value = null
       justDragged = true

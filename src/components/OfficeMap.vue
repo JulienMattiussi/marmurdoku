@@ -41,7 +41,7 @@ const size = zones.length * CELL
 const placeable = placeableGrid(zones, FURNITURE)
 const inRoom = zones.map((row) => row.map(Boolean))
 
-/** Furniture on each cell, as the tooltip names it ("Chaise · Tapis"). */
+/** Furniture on each cell, then its carpet, as the tooltip names them ("Chaise · Moquette"). */
 const furnitureLabels = zones.map((row) => row.map((): string[] => []))
 for (const piece of FURNITURE) {
   const label = FURNITURE_KINDS[piece.kind].label
@@ -50,8 +50,14 @@ for (const piece of FURNITURE) {
     if (!here.includes(label)) here.push(label)
   }
 }
+// The carpet is the one floor a clue names (François's): the tooltip says it too.
+zones.forEach((row, r) =>
+  row.forEach((zone, c) => {
+    if (zone?.floor === 'carpet') furnitureLabels[r]![c]!.push('moquette')
+  }),
+)
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
-/** Tooltip text per cell: who stands there, then what furniture. */
+/** Tooltip text per cell: who stands there, then what furniture, then the carpet. */
 const cellLabels = computed(() => {
   const names = new Map(
     Object.entries(props.placements).map(([id, cell]) => [

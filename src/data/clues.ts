@@ -6,7 +6,7 @@ import type { Clue, GlobalRule, PersonRule } from '@/lib/rules'
  * solver and the game (`rule`, rows and columns counted from 0). Keep the two
  * in step. Wording rules: a "table" is any table or desk; "plants" include
  * the flower bed of the yard (these two are not told to the player); "à côté
- * de" (never "près de", kept for "plus près") means on a neighboring cell (up, down, left or right) of the same room;
+ * de" (never "près de", so that "plus proche" stays a distance) means on a neighboring cell (up, down, left or right) of the same room;
  * "with someone" means in the same room (both told in RulesDialog.vue).
  */
 const PLANTS = ['plant', 'flowerBed'] as const
@@ -80,8 +80,8 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   ],
   karen: [
     {
-      text: 'était plus près des boîtes aux lettres que Jibé',
-      rules: [{ type: 'closerThan', kinds: ['mailbox'], person: 'jibe' }],
+      text: 'était sur une ligne plus proche des boîtes aux lettres que Jibé',
+      rules: [{ type: 'closerThan', kinds: ['mailbox'], person: 'jibe', rowsOnly: true }],
     },
   ],
   matthieu: [
@@ -108,7 +108,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   ],
   thiery: [
     {
-      text: 'était dans une pièce en hauteur, à exactement une colonne de Karen',
+      text: 'était dans une pièce à l’étage, à exactement une colonne de Karen',
       rules: [
         { type: 'inZone', zones: ['mezzanine', 'aquarium'] },
         { type: 'columnGap', person: 'karen', gap: 1 },
@@ -124,7 +124,7 @@ export const GENERAL_CLUES: Clue<GlobalRule>[] = [
     rules: [{ type: 'nearCount', kinds: ['foosball'], count: 2 }],
   },
   {
-    text: 'Deux personnes seulement étaient à côté de plantes',
+    text: 'Deux personnes exactement étaient à côté d’une plante',
     rules: [{ type: 'nearCount', kinds: [...PLANTS], count: 2 }],
   },
   {

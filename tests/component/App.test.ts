@@ -13,7 +13,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Marmerdoku')
   })
 
-  it('places the picked person on a clicked cell, and empties it on a second click', async () => {
+  it('places the picked person on a clicked cell, and a second click crosses them out', async () => {
     const { container } = render(App)
     const karen = screen.getByRole('button', { name: /^Karen/ })
     await fireEvent.click(karen)
@@ -24,6 +24,7 @@ describe('App', () => {
     expect(karen).toHaveTextContent('S8')
     await fireEvent.click(cell(container, 'S8'))
     expect(avatarsOnMap(container)).toEqual([])
+    expect(container.querySelectorAll('.cross')).toHaveLength(1)
   })
 
   it('crosses out a cell when nobody is picked', async () => {
@@ -59,6 +60,23 @@ describe('Vérifier', () => {
     await placeEveryone(container, SOLUTION)
     await fireEvent.click(screen.getByRole('button', { name: 'Vérifier' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Affaire classée')
+  })
+
+  it('reopens a closed case when a save is loaded', async () => {
+    localStorage.clear()
+    const { container } = render(App)
+    await fireEvent.click(screen.getByRole('button', { name: 'Sauvegardes' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Sauvegarder' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Fermer les sauvegardes' }))
+    await placeEveryone(container, SOLUTION)
+    await fireEvent.click(screen.getByRole('button', { name: 'Vérifier' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Sauvegardes' }))
+    await fireEvent.click(screen.getByRole('button', { name: /^Charger/ }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Oui' }))
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(avatarsOnMap(container)).toHaveLength(0)
+    await fireEvent.click(cell(container, 'S8'))
+    expect(container.querySelectorAll('.cross')).toHaveLength(1)
   })
 
   it('shows a short-lived "Raté !" on a wrong placement', async () => {
@@ -97,6 +115,9 @@ describe('Tooltip', () => {
     expect(container.querySelector('.tooltip')).toHaveTextContent('Chaise')
     await fireEvent.pointerLeave(cell(container, 'K9'))
     expect(container.querySelector('.tooltip')).toBeNull()
+    await fireEvent.pointerEnter(cell(container, 'M1'))
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.querySelector('.tooltip')).toHaveTextContent('Chaise · Moquette')
     vi.useRealTimers()
   })
 })

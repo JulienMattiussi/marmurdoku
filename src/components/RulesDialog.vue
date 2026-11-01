@@ -62,7 +62,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         </li>
         <li>« Avec quelqu’un » : dans la même zone.</li>
         <li>« Seul » : seul dans sa zone.</li>
-        <li>Une zone « en hauteur » est à l’étage : la Mezzanine ou l’Aquarium.</li>
+        <li>Les pièces à l’étage sont la Mezzanine et l’Aquarium.</li>
         <li>« Assis » peut être sur une chaise, un tabouret ou un canapé.</li>
       </ul>
 

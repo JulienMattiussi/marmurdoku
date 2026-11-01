@@ -16,6 +16,9 @@ export interface GameState {
   notes: Record<string, string[]>
 }
 
+/** What the cross card carries when dragged, in place of a suspect's id. */
+export const CROSS = 'cross'
+
 /** Placing on a cell, or noting it for the picked suspect. */
 export type Mode = 'place' | 'note'
 
@@ -52,6 +55,21 @@ const put = (state: GameState, person: string, cell: Cell): GameState => {
   }
 }
 
+/** Crosses a cell out over whoever stood there; a cross rules the cell out for everyone, so its notes go too. */
+const crossOut = (state: GameState, cell: Cell): GameState => {
+  const name = cellName(cell)
+  const placements = { ...state.placements }
+  const occupant = personAt(state, cell)
+  if (occupant) delete placements[occupant]
+  return {
+    placements,
+    crosses: state.crosses.includes(name) ? state.crosses : [...state.crosses, name],
+    notes: Object.fromEntries(
+      Object.entries(state.notes).map(([id, names]) => [id, names.filter((n) => n !== name)]),
+    ),
+  }
+}
+
 const toggleNote = (state: GameState, person: string, cell: Cell): GameState => {
   const name = cellName(cell)
   const current = state.notes[person] ?? []
@@ -64,9 +82,10 @@ const toggleNote = (state: GameState, person: string, cell: Cell): GameState => 
 
 /**
  * Clicking a cell. With a suspect picked in "note" mode, notes or unnotes the
- * cell for them. Otherwise: empties the cell if taken (person or cross);
- * places the picked suspect; or crosses the cell out when nobody is picked,
- * which also clears every note on it.
+ * cell for them. With a suspect picked otherwise: takes them off if they stand
+ * there, else places them, over whatever was there. With nobody picked: clears
+ * the cross, or crosses the cell out over whoever stood there, which also
+ * clears every note on it.
  */
 export const clickCell = (
   state: GameState,
@@ -76,26 +95,21 @@ export const clickCell = (
 ): GameState => {
   if (mode === 'note' && selected) return toggleNote(state, selected, cell)
   const name = cellName(cell)
-  const occupant = personAt(state, cell)
-  if (occupant) {
+  if (selected) {
+    if (personAt(state, cell) !== selected) return put(state, selected, cell)
     const placements = { ...state.placements }
-    delete placements[occupant]
+    delete placements[selected]
     return { ...state, placements }
   }
   if (state.crosses.includes(name)) {
     return { ...state, crosses: state.crosses.filter((other) => other !== name) }
   }
-  if (selected) return put(state, selected, cell)
-  // A cross rules the cell out for everyone: its notes go with it, in the same move.
-  const notes = Object.fromEntries(
-    Object.entries(state.notes).map(([id, names]) => [id, names.filter((n) => n !== name)]),
-  )
-  return { ...state, crosses: [...state.crosses, name], notes }
+  return crossOut(state, cell)
 }
 
-/** Dropping a dragged person on a cell replaces whatever was there. */
-export const dropPerson = (state: GameState, person: string, cell: Cell): GameState =>
-  put(state, person, cell)
+/** Dropping a dragged person, or the cross, on a cell replaces whatever was there. */
+export const dropOn = (state: GameState, dragged: string, cell: Cell): GameState =>
+  dragged === CROSS ? crossOut(state, cell) : put(state, dragged, cell)
 
 /**
  * The verdict of the "Vérifier" button: everyone placed, one per row and per

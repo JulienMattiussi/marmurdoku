@@ -2,7 +2,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   clickCell,
   clickEffect,
-  dropPerson,
+  dropOn,
   emptyGame,
   isSolved,
   type GameState,
@@ -45,11 +45,18 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
     }
   }
 
-  /** Loading a saved grid is one move: undo goes back to the grid before it. */
-  const load = (saved: GameState) => play(saved)
+  /**
+   * Loading a saved grid is one move: undo goes back to the grid before it.
+   * It also reopens a closed case, to play the saved grid on.
+   */
+  const load = (saved: GameState) => {
+    verdict.value = null
+    play(saved)
+  }
 
-  const drop = (person: string, cell: Cell) => {
-    play(dropPerson(state.value, person, cell))
+  /** Drops a suspect, or the cross (`CROSS`), on a cell. */
+  const drop = (dragged: string, cell: Cell) => {
+    play(dropOn(state.value, dragged, cell))
     selected.value = null
   }
 

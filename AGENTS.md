@@ -54,12 +54,13 @@ src/
 │   ├── BloodDrip.vue         # Coulure de sang sous le titre
 │   ├── VerdictOverlay.vue    # Message de fin devant la carte : « Affaire classée » ou « Raté ! »
 │   ├── RulesDialog.vue       # Fenêtre des règles (bouton « Règles » du rapport d'enquête)
+│   ├── CrossIcon.vue         # La croix de la fiche Croix et de son glisser
 │   ├── CastPanel.vue         # « (02) Les personnages » : les 20 avatars, à droite de la carte
 │   └── furniture/            # Sprites SVG : sièges, tables et revêtements, décor
 ├── composables/
 │   ├── useGame.ts            # La partie : historique, sélection, mode, verdict, raccourcis
 │   ├── useSaves.ts           # Sauvegardes nommées, dans le localStorage
-│   └── usePersonDrag.ts      # Glisser un personnage (souris ou tactile) vers une case
+│   └── useDrag.ts            # Glisser un personnage ou la croix (souris ou tactile) vers une case
 ├── data/
 │   ├── zones.ts              # Les 14 zones : code de grille, nom, sol, étage
 │   ├── office.ts             # Grille 20x20 des zones et liste des meubles
@@ -142,12 +143,14 @@ tests/
 
 - Clic sur un personnage : le sélectionne (un seul à la fois), ou le
   désélectionne.
-- Clic sur une case : la vide si elle est occupée (personne ou croix) ; sinon
-  y place le personnage sélectionné, ou y met une croix si personne ne l'est.
+- Clic sur une case, avec un personnage sélectionné : l'en retire s'il s'y
+  tient, sinon l'y place, à la place de la croix ou de la personne qui s'y
+  trouvait. Sans sélection : retire la croix, ou en met une (à la place de la
+  personne qui s'y tenait).
 - Glisser un personnage (depuis le panneau ou la carte) vers une case : la
   case survolée s'allume, le dépôt remplace ce qu'elle contenait.
 - Survol d'une case pendant une seconde : une infobulle nomme qui s'y tient
-  et les meubles qui s'y trouvent (libellés de `FURNITURE_KINDS`).
+  et les meubles qui s'y trouvent (libellés de `FURNITURE_KINDS`), puis « Moquette » sur la moquette.
 - Seules les cases plaçables acceptent clics et dépôts. La logique est pure
   (`lib/game.ts`, testée) ; le glisser passe par les événements pointeur.
 - **Mode Placer / Noter** (`GameToolbar.vue`) : en mode Noter, un clic note
@@ -163,7 +166,9 @@ tests/
   Une croix efface toutes les notes de sa case, dans le même coup.
 - **Croix** : une fiche de plus, dans la case libre après les 20 suspects
   (`CastPanel.vue`). Elle est enfoncée dès que personne n'est sélectionné
-  (après un placement, par exemple) ; cliquer dessus désélectionne.
+  (après un placement, par exemple) ; cliquer dessus désélectionne. Elle se
+  glisse aussi vers une case, comme un personnage : la croix remplace ce que
+  la case contenait.
 - **Curseur sur la grille** : il dit aussi ce que fera le clic : crayon plein
   pour placer, crayon en pointillés pour noter, croix rouge pour barrer.
 - **Annuler / refaire** : un seul historique pour tous les coups (placements,
@@ -180,7 +185,7 @@ tests/
   n'est pas placé. Le verdict (`isSolved`) juge sur les règles, pas sur
   `data/solution.ts` : toute solution que les indices permettent gagne.
   Échec : « Raté ! » devant la carte pendant 2,5 s, puis on continue. Succès :
-  « Affaire classée » révèle le coupable, reste affiché et fige la partie
+  « Affaire classée » révèle le coupable, reste affiché et fige la partie, jusqu'au chargement d'une sauvegarde
   (`VerdictOverlay.vue`).
 
 ## Indices et solveur

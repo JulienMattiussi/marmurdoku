@@ -93,7 +93,7 @@ src/
 │   ├── history.ts            # Annuler / refaire sur des états immuables
 │   ├── saves.ts              # Liste des sauvegardes : ajout, retrait, lecture tolérante
 │   ├── reconstruction.ts     # Script de la reconstitution en suite d'images : caméra, positions, bulles
-│   ├── tooltips.ts           # Texte des infobulles : qui se tient sur la case, meubles, moquette
+│   ├── tooltips.ts           # Texte des infobulles : qui se tient sur la case, meubles
 │   └── geometry.ts           # Taille d'une case, coordonnées de la carte (« B3 ») dans les deux sens
 ├── puzzle.ts                 # Le niveau assemblé depuis data/ (plateau, personnages, indices, solution)
 ├── App.vue                   # La page
@@ -166,8 +166,11 @@ tests/
   personne qui s'y tenait).
 - Glisser un personnage (depuis le panneau ou la carte) vers une case : la
   case survolée s'allume, le dépôt remplace ce qu'elle contenait.
+- Case pointée, à la souris ou pendant un glisser : sa ligne et sa colonne
+  s'éclairent en entier, et sa lettre et son numéro autour de la carte
+  (`OfficeMap.vue`). Au doigt, seulement pendant un glisser.
 - Survol d'une case pendant une seconde : une infobulle nomme qui s'y tient
-  et les meubles qui s'y trouvent (libellés de `FURNITURE_KINDS`), puis « Moquette » sur la moquette.
+  et les meubles qui s'y trouvent (libellés de `FURNITURE_KINDS`).
 - Seules les cases plaçables acceptent clics et dépôts. La logique est pure
   (`lib/game.ts`, testée) ; le glisser passe par les événements pointeur.
 - **Mode Placer / Noter** (`GameToolbar.vue`) : en mode Noter, un clic note

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import CellLayer from '@/components/CellLayer.vue'
 import FloorPatterns from '@/components/FloorPatterns.vue'
 import MapCoordinates from '@/components/MapCoordinates.vue'
@@ -62,6 +62,13 @@ const cameraStyle = computed(() => {
   }
 })
 
+/**
+ * The cell the player points at, under the mouse or under a drag: its whole
+ * row and column light up, and its letter and number.
+ */
+const mouseCell = ref<Cell | null>(null)
+const pointed = computed(() => (props.still ? null : (props.hoverCell ?? mouseCell.value)))
+
 const ground = groundLabels(zones, FURNITURE)
 const nameOf = (id: string) => PEOPLE.find((person) => person.id === id)!.name
 const cellLabels = computed(() => tooltips(ground, props.placements, nameOf))
@@ -93,6 +100,10 @@ const cellLabels = computed(() => tooltips(ground, props.placements, nameOf))
           />
         </template>
         <template v-else>
+          <g v-if="pointed" class="crosshair" aria-hidden="true">
+            <rect :y="pointed.row * CELL" :width="size" :height="CELL" />
+            <rect :x="pointed.col * CELL" :width="CELL" :height="size" />
+          </g>
           <NotesLayer :notes="notes" :placements="placements" :selected="selected" />
           <PeopleLayer :placements="placements" />
 
@@ -106,13 +117,14 @@ const cellLabels = computed(() => tooltips(ground, props.placements, nameOf))
             :effect="effect"
             @click="emit('cellClick', $event)"
             @press="(cell, event) => emit('cellPress', cell, event)"
+            @point="mouseCell = $event"
           />
         </template>
       </g>
     </g>
 
     <rect x="-3" y="-3" :width="size + 6" :height="size + 6" class="frame" />
-    <MapCoordinates :cells="zones.length" :margin="MARGIN" :zoomed="!!still?.camera" />
+    <MapCoordinates :cells="zones.length" :margin="MARGIN" :zoomed="!!still?.camera" :pointed="pointed" />
   </svg>
 </template>
 
@@ -126,6 +138,11 @@ const cellLabels = computed(() => tooltips(ground, props.placements, nameOf))
   .camera {
     transition: none;
   }
+}
+.crosshair rect {
+  fill: rgb(242 196 24 / 28%);
+  stroke: rgb(242 196 24 / 70%);
+  stroke-width: 2;
 }
 .frame {
   fill: none;

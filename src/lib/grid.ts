@@ -1,4 +1,4 @@
-export type FloorKind =
+type FloorKind =
   'carpet' | 'oak' | 'planks' | 'herringbone' | 'walnut' | 'tiles' | 'concrete' | 'paving'
 
 export interface Zone {

@@ -27,6 +27,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   click: [cell: Cell]
   press: [cell: Cell, event: PointerEvent]
+  /** The free cell under the mouse, or null when it leaves: its row and column light up. */
+  point: [cell: Cell | null]
 }>()
 
 const TOOLTIP_DELAY_MS = 1000
@@ -75,6 +77,15 @@ onUnmounted(hideTip)
 const onClick = (target: (typeof targets)[number]) => {
   if (target.free) emit('click', parseCellName(target.name))
 }
+const onEnter = (target: (typeof targets)[number], event: PointerEvent) => {
+  scheduleTip(target.name)
+  // A touch has no hover: its row and column only light up while dragging.
+  if (target.free && event.pointerType === 'mouse') emit('point', parseCellName(target.name))
+}
+const onLeave = () => {
+  hideTip()
+  emit('point', null)
+}
 const onPress = (target: (typeof targets)[number], event: PointerEvent) => {
   hideTip()
   if (target.free) emit('press', parseCellName(target.name), event)
@@ -117,8 +128,8 @@ const onPress = (target: (typeof targets)[number], event: PointerEvent) => {
     :class="target.free ? ['target--free', `target--${effect}`] : []"
     @click="onClick(target)"
     @pointerdown="onPress(target, $event)"
-    @pointerenter="scheduleTip(target.name)"
-    @pointerleave="hideTip"
+    @pointerenter="onEnter(target, $event)"
+    @pointerleave="onLeave"
   />
 
   <g v-if="tip" class="tooltip" aria-hidden="true">

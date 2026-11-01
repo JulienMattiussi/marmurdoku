@@ -12,6 +12,8 @@ import type { Clue, GlobalRule, PersonRule } from '@/lib/rules'
 const PLANTS = ['plant', 'flowerBed'] as const
 /** What one sits on ("était assis"), as RulesDialog.vue tells the player. */
 const SEATS = ['chair', 'stool', 'sofa'] as const
+/** The rooms "à l'étage", as RulesDialog.vue tells the player. */
+const UPPER_ROOMS = ['mezzanine', 'aquarium']
 
 export const CLUES: Record<string, Clue<PersonRule>[]> = {
   adrieng: [
@@ -53,12 +55,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
       rules: [{ type: 'nearFurniture', kinds: ['extinguisher'] }],
     },
   ],
-  francois: [
-    {
-      text: 'était sur de la moquette',
-      rules: [{ type: 'onFloor', floors: ['carpet'] }],
-    },
-  ],
+  francois: [{ text: 'était à l’étage', rules: [{ type: 'inZone', zones: UPPER_ROOMS }] }],
   guillaume: [
     { text: 'était à côté d’un vélo', rules: [{ type: 'nearFurniture', kinds: ['bike'] }] },
   ],
@@ -115,7 +112,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
       text: 'était dans une pièce à l’étage, à exactement une colonne de Karen',
       parts: ['était dans une pièce à l’étage', 'était à exactement une colonne de Karen'],
       rules: [
-        { type: 'inZone', zones: ['mezzanine', 'aquarium'] },
+        { type: 'inZone', zones: UPPER_ROOMS },
         { type: 'columnGap', person: 'karen', gap: 1 },
       ],
     },

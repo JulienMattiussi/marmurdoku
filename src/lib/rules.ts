@@ -1,6 +1,6 @@
 import { distanceTo, isAwayFromWalls, isInCorner, isNear, type Board } from '@/lib/board'
 import type { FurnitureKind } from '@/lib/furniture'
-import type { Cell, FloorKind, Zone } from '@/lib/grid'
+import type { Cell, Zone } from '@/lib/grid'
 
 /** A rule about one person, the subject of the clue. Rows and columns count from 0. */
 export type PersonRule =
@@ -8,8 +8,6 @@ export type PersonRule =
   /** "Either… or…": at least one of these rules holds. */
   | { type: 'anyOf'; rules: PersonRule[] }
   | { type: 'notInZone'; zones: string[] }
-  /** Standing on one of these floors ("on carpet"). */
-  | { type: 'onFloor'; floors: FloorKind[] }
   | { type: 'onFurniture'; kinds: FurnitureKind[] }
   | { type: 'notOnFurniture'; kinds: FurnitureKind[] }
   | { type: 'nearFurniture'; kinds: FurnitureKind[] }
@@ -97,8 +95,6 @@ export const personRuleStatus = (
     }
     case 'inZone':
       return verdict(rule.zones.includes(zoneAt(board, cell).id))
-    case 'onFloor':
-      return verdict(rule.floors.includes(zoneAt(board, cell).floor))
     case 'notInZone':
       return verdict(!rule.zones.includes(zoneAt(board, cell).id))
     case 'onFurniture':

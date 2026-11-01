@@ -130,10 +130,21 @@ describe('Tooltip', () => {
     expect(container.querySelector('.tooltip')).toHaveTextContent('Chaise')
     await fireEvent.pointerLeave(cell(container, 'K9'))
     expect(container.querySelector('.tooltip')).toBeNull()
-    await fireEvent.pointerEnter(cell(container, 'M1'))
-    await vi.advanceTimersByTimeAsync(1000)
-    expect(container.querySelector('.tooltip')).toHaveTextContent('Chaise · Moquette')
     vi.useRealTimers()
+  })
+})
+
+describe('Pointed cell', () => {
+  it('lights up the row and column under the mouse', async () => {
+    const { container } = render(App)
+    const pointed = () =>
+      [...container.querySelectorAll('.coordinates--pointed text')].map((t) => t.textContent)
+    await fireEvent.pointerEnter(cell(container, 'K9'), { pointerType: 'mouse' })
+    expect(container.querySelector('.crosshair')).not.toBeNull()
+    expect(pointed()).toEqual(['9', '9', 'K', 'K'])
+    await fireEvent.pointerLeave(cell(container, 'K9'))
+    expect(container.querySelector('.crosshair')).toBeNull()
+    expect(pointed()).toEqual([])
   })
 })
 

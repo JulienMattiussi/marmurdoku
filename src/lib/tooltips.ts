@@ -4,10 +4,7 @@ import type { Cell, Zone } from '@/lib/grid'
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
-/**
- * What lies on each cell, as the tooltip names it: its furniture, then
- * "Moquette" on the carpet, the one floor a clue names (François's).
- */
+/** What lies on each cell, as the tooltip names it: its furniture. */
 export const groundLabels = (zones: (Zone | null)[][], furniture: Furniture[]) => {
   const labels = zones.map((row) => row.map((): string[] => []))
   for (const piece of furniture) {
@@ -17,15 +14,10 @@ export const groundLabels = (zones: (Zone | null)[][], furniture: Furniture[]) =
       if (!here.includes(label)) here.push(label)
     }
   }
-  zones.forEach((row, r) =>
-    row.forEach((zone, c) => {
-      if (zone?.floor === 'carpet') labels[r]![c]!.push('Moquette')
-    }),
-  )
   return labels
 }
 
-/** The tooltip of each cell: who stands there, then what lies there ("Karen · Chaise · Moquette"). */
+/** The tooltip of each cell: who stands there, then what lies there ("Karen · Chaise"). */
 export const tooltips = (
   ground: string[][][],
   placements: Record<string, Cell>,

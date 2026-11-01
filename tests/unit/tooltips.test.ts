@@ -11,15 +11,15 @@ const at = (labels: string[][] | string[][][], name: string) => {
 }
 
 describe('tooltips', () => {
-  it('names the furniture, then the carpet', () => {
+  it('names the furniture, and nothing of the floor', () => {
     expect(at(ground, 'K9')).toEqual(['Chaise'])
-    expect(at(ground, 'M1')).toEqual(['Chaise', 'Moquette'])
-    expect(at(ground, 'C2')).toEqual(['Moquette'])
+    expect(at(ground, 'M1')).toEqual(['Chaise'])
+    expect(at(ground, 'C2')).toEqual([])
   })
 
   it('puts who stands there first, and says nothing of an empty bare cell', () => {
     const labels = tooltips(ground, { karen: parseCellName('M1') }, () => 'Karen')
-    expect(at(labels, 'M1')).toBe('Karen · Chaise · Moquette')
+    expect(at(labels, 'M1')).toBe('Karen · Chaise')
     expect(at(labels, 'S8')).toBe('')
   })
 })

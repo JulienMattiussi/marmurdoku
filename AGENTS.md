@@ -182,9 +182,11 @@ tests/
   stockage, elles ne vivent que le temps de la session. Charger est un coup,
   que ↶ annule.
 - **Vérifier** (à droite de « Les suspects ») : grisé tant que tout le monde
-  n'est pas placé. Le verdict (`isSolved`) juge sur les règles, pas sur
+  n'est pas placé. Le verdict (`brokenRules`) juge sur les règles, pas sur
   `data/solution.ts` : toute solution que les indices permettent gagne.
-  Échec : « Raté ! » devant la carte pendant 2,5 s, puis on continue. Succès :
+  Échec : « Raté ! » devant la carte cite jusqu'à trois règles enfreintes
+  (une par ligne et par colonne d'abord, puis le meurtre, les indices
+  généraux, ceux des fiches), et reste jusqu'au clic sur « OK ». Succès :
   « Affaire classée » révèle le coupable, reste affiché et fige la partie, jusqu'au chargement d'une sauvegarde
   (`VerdictOverlay.vue`).
 

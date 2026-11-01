@@ -79,8 +79,7 @@ describe('Vérifier', () => {
     expect(container.querySelectorAll('.cross')).toHaveLength(1)
   })
 
-  it('shows a short-lived "Raté !" on a wrong placement', async () => {
-    vi.useFakeTimers()
+  it('names up to three broken rules on a wrong placement, until "OK"', async () => {
     const { container } = render(App)
     await placeEveryone(container, {
       ...SOLUTION,
@@ -88,10 +87,12 @@ describe('Vérifier', () => {
       antoine: SOLUTION.francois!,
     })
     await fireEvent.click(screen.getByRole('button', { name: 'Vérifier' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Raté !')
-    await vi.runAllTimersAsync()
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('Raté !')
+    expect(alert).toHaveTextContent('« Antoine était dans le lit »')
+    expect(alert.querySelectorAll('li').length).toBeLessThanOrEqual(3)
+    await fireEvent.click(screen.getByRole('button', { name: 'OK' }))
     expect(screen.queryByRole('alert')).toBeNull()
-    vi.useRealTimers()
   })
 })
 

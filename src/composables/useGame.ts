@@ -1,20 +1,17 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
+  brokenRules,
   clickCell,
   clickEffect,
   dropOn,
   emptyGame,
-  isSolved,
   type GameState,
   type Mode,
 } from '@/lib/game'
 import { cellName } from '@/lib/geometry'
 import type { Cell } from '@/lib/grid'
 import { record, redo, startHistory, undo } from '@/lib/history'
-import type { Puzzle } from '@/lib/solver'
-
-/** A wrong guess shows this long before the game goes on. */
-const WRONG_MESSAGE_MS = 2500
+import type { ClueRef, Puzzle } from '@/lib/solver'
 
 /**
  * The game as the page plays it: the undo history of moves, who is picked,
@@ -70,14 +67,20 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
   const deselect = () => (selected.value = null)
 
   const everyonePlaced = computed(() => puzzle.people.every((id) => state.value.placements[id]))
+  /** What the last failed check found broken, for its message. */
+  const broken = ref<ClueRef[]>([])
   const verify = () => {
-    if (isSolved(puzzle, state.value.placements)) {
+    broken.value = brokenRules(puzzle, state.value.placements)
+    if (!broken.value.length) {
       verdict.value = 'solved'
       selected.value = null
       return
     }
     verdict.value = 'wrong'
-    setTimeout(() => (verdict.value = null), WRONG_MESSAGE_MS)
+  }
+  /** The "OK" of a failed check: the game goes on. */
+  const dismiss = () => {
+    if (verdict.value === 'wrong') verdict.value = null
   }
 
   const canUndo = computed(() => !over.value && history.value.past.length > 0)
@@ -105,6 +108,7 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
     selected,
     mode,
     verdict,
+    broken,
     over,
     everyonePlaced,
     effect,
@@ -117,6 +121,7 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
     load,
     occupantOf,
     verify,
+    dismiss,
     undo: back,
     redo: forward,
   }

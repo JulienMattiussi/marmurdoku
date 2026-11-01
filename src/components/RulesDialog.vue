@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import { CRIME_SCENE_TEXT } from '@/lib/rules'
 
 /**
  * The rules of the game, in a modal over the page. The wording rules repeat
@@ -52,7 +53,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           (chaise, tabouret, canapé, lit, tapis, toilettes, douche). Pas sur une table, une plante,
           un vélo…
         </li>
-        <li>Le coupable était seul dans une zone avec la victime.</li>
+        <li>{{ CRIME_SCENE_TEXT }}.</li>
       </ul>
 
       <h3 class="font-bold tracking-widest uppercase">Les indices</h3>

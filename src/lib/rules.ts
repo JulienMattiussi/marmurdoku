@@ -50,6 +50,11 @@ export type GlobalRule =
 export interface Clue<R> {
   text: string
   rules: R[]
+  /**
+   * For a clue telling several things: the text of each rule, in the order of
+   * `rules`, so that a failed check names only the part that does not hold.
+   */
+  parts?: string[]
 }
 
 /** Who stands where; people not placed yet are missing. */
@@ -179,6 +184,9 @@ export const globalRuleStatus = (
     }
   }
 }
+
+/** The murder as the rules tell it to the player, and as a failed check names it. */
+export const CRIME_SCENE_TEXT = 'Le coupable était seul dans une zone avec la victime'
 
 /**
  * The murder, as the player knows it: "the culprit was alone in a zone with

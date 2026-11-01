@@ -1,6 +1,7 @@
 import { isNear, type Board } from '@/lib/board'
 import type { Cell } from '@/lib/grid'
 import {
+  CRIME_SCENE_TEXT,
   globalRuleStatus,
   crimeSceneStatus,
   personRuleStatus,
@@ -8,6 +9,7 @@ import {
   type GlobalRule,
   type PersonRule,
   type Placements,
+  type RuleStatus,
 } from '@/lib/rules'
 
 export interface Puzzle {
@@ -17,22 +19,56 @@ export interface Puzzle {
   general: Clue<GlobalRule>[]
 }
 
-/** Every rule of the puzzle on these placements: broken wins over open, open over ok. */
-export const puzzleStatus = (puzzle: Puzzle, placements: Placements) => {
+/** Broken wins over open, open over ok. */
+const worst = (statuses: RuleStatus[]): RuleStatus =>
+  statuses.includes('broken') ? 'broken' : statuses.includes('open') ? 'open' : 'ok'
+
+/** A clue as the player reads it: its text, and whose card it is on (none for a general clue). */
+export interface ClueRef {
+  person?: string
+  text: string
+}
+
+/**
+ * Each clue on these placements, the murder first, then the general clues,
+ * then each person's. A clue told in parts is checked part by part.
+ */
+const clueStatuses = (puzzle: Puzzle, placements: Placements) => {
   const { board, people, clues, general } = puzzle
-  const statuses = [
-    crimeSceneStatus(placements, board, people),
-    ...general.flatMap(({ rules }) =>
-      rules.map((rule) => globalRuleStatus(rule, placements, board, people)),
+  const split = <R>(
+    person: string | undefined,
+    { text, rules, parts }: Clue<R>,
+    status: (rule: R) => RuleStatus,
+  ) =>
+    parts
+      ? rules.map((rule, i) => ({ person, text: parts[i]!, status: status(rule) }))
+      : [{ person, text, status: worst(rules.map(status)) }]
+  return [
+    {
+      person: undefined,
+      text: CRIME_SCENE_TEXT,
+      status: crimeSceneStatus(placements, board, people),
+    },
+    ...general.flatMap((clue) =>
+      split(undefined, clue, (rule) => globalRuleStatus(rule, placements, board, people)),
     ),
     ...Object.entries(clues).flatMap(([person, list]) =>
-      list.flatMap(({ rules }) =>
-        rules.map((rule) => personRuleStatus(rule, person, placements, board, people)),
+      list.flatMap((clue) =>
+        split(person, clue, (rule) => personRuleStatus(rule, person, placements, board, people)),
       ),
     ),
   ]
-  return statuses.includes('broken') ? 'broken' : statuses.includes('open') ? 'open' : 'ok'
 }
+
+/** Every rule of the puzzle on these placements: broken wins over open, open over ok. */
+export const puzzleStatus = (puzzle: Puzzle, placements: Placements) =>
+  worst(clueStatuses(puzzle, placements).map(({ status }) => status))
+
+/** The clues these placements break, in the order of `clueStatuses`. */
+export const brokenClues = (puzzle: Puzzle, placements: Placements): ClueRef[] =>
+  clueStatuses(puzzle, placements)
+    .filter(({ status }) => status === 'broken')
+    .map(({ person, text }) => ({ person, text }))
 
 /** Per-person rules the search applies itself, beyond the cells each person may stand on. */
 interface Links {

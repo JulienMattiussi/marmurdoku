@@ -1,7 +1,7 @@
 import { cellName } from '@/lib/geometry'
 import type { Cell } from '@/lib/grid'
 import type { Placements } from '@/lib/rules'
-import { puzzleStatus, type Puzzle } from '@/lib/solver'
+import { brokenClues, type ClueRef, type Puzzle } from '@/lib/solver'
 
 /**
  * What the player has done so far, everything the undo history keeps: who
@@ -111,23 +111,30 @@ export const clickCell = (
 export const dropOn = (state: GameState, dragged: string, cell: Cell): GameState =>
   dragged === CROSS ? crossOut(state, cell) : put(state, dragged, cell)
 
+/** The board rules a check names when broken, before the clues. */
+const ONE_PER_LINE = 'Exactement une personne par ligne et par colonne'
+const STANDING = 'Chacun se tient sur le sol ou sur un meuble où il peut s’asseoir ou s’allonger'
+
 /**
- * The verdict of the "Vérifier" button: everyone placed, one per row and per
- * column, on placeable cells, and every clue (the murder included) holding.
- * Judged on the rules rather than against data/solution.ts, so that any
- * placement the clues allow wins.
+ * What the "Vérifier" button finds wrong in a complete placement: the board
+ * rules (one per row and column, on placeable cells), then every clue the
+ * murder included. Judged on the rules rather than against data/solution.ts,
+ * so that any placement the clues allow wins.
  */
-export const isSolved = (puzzle: Puzzle, placements: Placements) => {
-  const cells = puzzle.people.map((id) => placements[id])
-  if (cells.some((cell) => !cell)) return false
-  const placed = cells as Cell[]
+export const brokenRules = (puzzle: Puzzle, placements: Placements): ClueRef[] => {
+  const placed = puzzle.people.flatMap((id) => placements[id] ?? [])
   const distinct = (values: number[]) => new Set(values).size === values.length
-  return (
-    distinct(placed.map((cell) => cell.row)) &&
-    distinct(placed.map((cell) => cell.col)) &&
-    placed.every(({ row, col }) => puzzle.board.placeable[row]![col]) &&
-    puzzleStatus(puzzle, placements) === 'ok'
-  )
+  const board = [
+    {
+      text: ONE_PER_LINE,
+      holds: distinct(placed.map((cell) => cell.row)) && distinct(placed.map((cell) => cell.col)),
+    },
+    { text: STANDING, holds: placed.every(({ row, col }) => puzzle.board.placeable[row]![col]) },
+  ]
+  return [
+    ...board.filter(({ holds }) => !holds).map(({ text }) => ({ text })),
+    ...brokenClues(puzzle, placements),
+  ]
 }
 
 /** What a click on a cell does: place or note for the picked suspect, cross out with nobody picked. */

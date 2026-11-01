@@ -77,7 +77,12 @@ const onCross = () => {
         @cell-click="onCellClick"
         @cell-press="onCellPress"
       />
-      <VerdictOverlay v-if="game.verdict.value" :verdict="game.verdict.value" />
+      <VerdictOverlay
+        v-if="game.verdict.value"
+        :verdict="game.verdict.value"
+        :broken="game.broken.value"
+        @ok="game.dismiss"
+      />
     </div>
     <div class="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
       <header class="short:gap-2 flex flex-col gap-3">

@@ -1,4 +1,4 @@
-import { CROSS, clickCell, clickEffect, dropOn, emptyGame, isSolved } from '@/lib/game'
+import { CROSS, brokenRules, clickCell, clickEffect, dropOn, emptyGame } from '@/lib/game'
 import { record, redo, startHistory, undo } from '@/lib/history'
 import { addSave, defaultName, parseSaves, removeSave } from '@/lib/saves'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
@@ -99,18 +99,35 @@ describe('history', () => {
   })
 })
 
-describe('isSolved', () => {
-  it('accepts the solution, refuses it incomplete or with a broken clue', () => {
-    expect(isSolved(PUZZLE, SOLUTION_PLACEMENTS)).toBe(true)
-    const missing = { ...SOLUTION_PLACEMENTS }
-    delete missing.karen
-    expect(isSolved(PUZZLE, missing)).toBe(false)
+describe('brokenRules', () => {
+  it('finds nothing in the solution, and names each broken clue with its card', () => {
+    expect(brokenRules(PUZZLE, SOLUTION_PLACEMENTS)).toEqual([])
     const swapped = {
       ...SOLUTION_PLACEMENTS,
       francois: SOLUTION_PLACEMENTS.antoine!,
       antoine: SOLUTION_PLACEMENTS.francois!,
     }
-    expect(isSolved(PUZZLE, swapped)).toBe(false)
+    expect(brokenRules(PUZZLE, swapped)).toContainEqual({
+      person: 'antoine',
+      text: 'était dans le lit',
+    })
+  })
+
+  it('names only the broken part of a clue told in parts', () => {
+    // Matthieu from F17 to D17: still in the break room, no longer 3 columns from Julio (I).
+    const moved = { ...SOLUTION_PLACEMENTS, matthieu: { ...SOLUTION_PLACEMENTS.matthieu!, col: 3 } }
+    const matthieu = brokenRules(PUZZLE, moved).filter(({ person }) => person === 'matthieu')
+    expect(matthieu).toEqual([
+      { person: 'matthieu', text: 'était à exactement 3 colonnes de Julio' },
+    ])
+  })
+
+  it('names the one-per-line rule first', () => {
+    // Karen from S8 to S6, on Maxime's row.
+    const sameRow = { ...SOLUTION_PLACEMENTS, karen: { ...SOLUTION_PLACEMENTS.karen!, row: 5 } }
+    expect(brokenRules(PUZZLE, sameRow)[0]).toEqual({
+      text: 'Exactement une personne par ligne et par colonne',
+    })
   })
 })
 

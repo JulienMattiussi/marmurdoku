@@ -33,6 +33,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   benoit: [
     {
       text: 'était dans la salle de bain, à côté des toilettes',
+      parts: ['était dans la salle de bain', 'était à côté des toilettes'],
       rules: [
         { type: 'inZone', zones: ['bathroom'] },
         { type: 'nearFurniture', kinds: ['toilet'] },
@@ -42,6 +43,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   caroline: [
     {
       text: 'était sur une chaise, dans le coin d’une zone',
+      parts: ['était sur une chaise', 'était dans le coin d’une zone'],
       rules: [{ type: 'onFurniture', kinds: ['chair'] }, { type: 'inCorner' }],
     },
   ],
@@ -65,6 +67,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   jibe: [
     {
       text: 'était debout à côté d’une chaise',
+      parts: ['était debout', 'était à côté d’une chaise'],
       rules: [
         { type: 'notOnFurniture', kinds: [...SEATS, 'bed', 'toilet'] },
         { type: 'nearFurniture', kinds: ['chair'] },
@@ -87,6 +90,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   matthieu: [
     {
       text: 'était dans la salle de pause, à exactement 3 colonnes de Julio',
+      parts: ['était dans la salle de pause', 'était à exactement 3 colonnes de Julio'],
       rules: [
         { type: 'inZone', zones: ['break-room'] },
         { type: 'columnGap', person: 'julio', gap: 3 },
@@ -109,6 +113,7 @@ export const CLUES: Record<string, Clue<PersonRule>[]> = {
   thiery: [
     {
       text: 'était dans une pièce à l’étage, à exactement une colonne de Karen',
+      parts: ['était dans une pièce à l’étage', 'était à exactement une colonne de Karen'],
       rules: [
         { type: 'inZone', zones: ['mezzanine', 'aquarium'] },
         { type: 'columnGap', person: 'karen', gap: 1 },

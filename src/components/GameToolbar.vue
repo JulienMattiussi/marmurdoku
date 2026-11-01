@@ -26,10 +26,16 @@ const MODES: { value: Mode; label: string; title: string }[] = [
   <div class="flex flex-1 flex-wrap items-center gap-2">
     <button
       type="button"
-      class="bg-blood text-bone hover:bg-blood-bright flex h-8 items-center rounded-sm px-4 text-sm leading-none font-bold tracking-widest uppercase shadow-lg transition-colors disabled:cursor-not-allowed disabled:bg-stone-600 disabled:text-stone-300 disabled:shadow-none"
+      class="bg-blood text-bone hover:bg-blood-bright flex h-8 items-center gap-2 rounded-sm px-4 text-sm leading-none font-bold tracking-widest uppercase shadow-lg transition-colors disabled:cursor-not-allowed disabled:bg-stone-600 disabled:text-stone-300 disabled:shadow-none"
       :disabled="!canVerify"
+      title="Valide ta solution une fois tous les suspects placés"
       @click="emit('verify')"
     >
+      <!-- The detective's magnifying glass. -->
+      <svg viewBox="0 0 16 16" class="size-4 shrink-0" fill="none" aria-hidden="true">
+        <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.8" />
+        <path d="M10 10l4.5 4.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+      </svg>
       Vérifier
     </button>
     <div
@@ -86,9 +92,24 @@ const MODES: { value: Mode; label: string; title: string }[] = [
       </div>
       <button
         type="button"
-        class="border-bone/30 text-bone flex h-8 items-center rounded-sm border px-3 text-sm leading-none font-bold tracking-wider uppercase transition-colors hover:bg-white/10"
+        class="border-bone/30 text-bone flex h-8 items-center gap-2 rounded-sm border px-3 text-sm leading-none font-bold tracking-wider uppercase transition-colors hover:bg-white/10"
         @click="emit('saves')"
       >
+        <!-- A case file, where the investigation is filed away. -->
+        <svg viewBox="0 0 16 16" class="size-4 shrink-0" fill="none" aria-hidden="true">
+          <path
+            d="M1.5 4V13a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V5.5a1 1 0 0 0-1-1H7.5L6 2.5H2.5a1 1 0 0 0-1 1z"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M4.5 9h7M4.5 11.5h4.5"
+            stroke="currentColor"
+            stroke-width="1.2"
+            stroke-linecap="round"
+          />
+        </svg>
         Sauvegardes
       </button>
     </div>

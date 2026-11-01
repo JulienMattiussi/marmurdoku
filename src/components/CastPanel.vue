@@ -157,9 +157,7 @@ const showRules = ref(false)
           <CrossIcon class="text-blood-bright size-9 shrink-0 p-1.5" />
           <span class="short:gap-0.5 flex min-w-0 flex-col gap-1 leading-tight">
             <span class="text-sm font-bold">Croix</span>
-            <span class="text-[11px] leading-tight opacity-80"
-              >Barre une case, d’un clic ou en la glissant</span
-            >
+            <span class="text-[11px] leading-tight opacity-80">Marque un emplacement vide</span>
           </span>
         </button>
       </li>

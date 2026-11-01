@@ -48,8 +48,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           Place chaque suspect sur le plan : exactement une personne par ligne et par colonne.
         </li>
         <li>
-          On se tient sur le sol, ou sur un meuble où l’on peut s’asseoir ou s’allonger (chaise,
-          tabouret, canapé, lit, tapis, toilettes, douche). Pas sur une table, une plante, un vélo…
+          Ils se tiennent sur le sol, ou sur un meuble où ils peuvent s’asseoir ou s’allonger
+          (chaise, tabouret, canapé, lit, tapis, toilettes, douche). Pas sur une table, une plante,
+          un vélo…
         </li>
         <li>Le coupable était seul dans une zone avec la victime.</li>
       </ul>
@@ -57,8 +58,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       <h3 class="font-bold tracking-widest uppercase">Les indices</h3>
       <ul class="mb-3 list-disc pl-5">
         <li>
-          « À côté de » : sur une case voisine (en haut, en bas, à gauche ou à droite), dans la même
-          zone. On n’est jamais à côté de quelque chose à travers un mur.
+          « À côté de » : sur une case voisine (haut, bas, gauche ou droite), dans la même zone. On
+          n’est jamais à côté de quelque chose à travers un mur.
         </li>
         <li>« Avec quelqu’un » : dans la même zone.</li>
         <li>« Seul » : seul dans sa zone.</li>
@@ -68,12 +69,17 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
       <h3 class="font-bold tracking-widest uppercase">Les commandes</h3>
       <ul class="list-disc pl-5">
-        <li>Clic sur un suspect : il est sélectionné ; un second clic le lâche.</li>
-        <li>Clic sur une case vide : y place le suspect sélectionné, ou y met une croix.</li>
-        <li>Clic sur une case occupée : la vide.</li>
+        <li>Clic sur un suspect : il est sélectionné ; un clic sur la carte le dépose.</li>
         <li>
-          On peut aussi glisser un suspect jusqu’à une case : il remplace ce qui s’y trouvait.
+          Si aucun suspect n’est sélectionné, un clic sur une case y met une croix ; un second clic
+          la retire.
         </li>
+        <li>
+          Ce qu’on pose sur une case remplace ce qui s’y trouvait ; cliquer sur le suspect
+          sélectionné le retire de la carte.
+        </li>
+        <li>En mode Noter, un clic note ou retire une position possible du suspect sélectionné.</li>
+        <li>On peut aussi glisser un suspect ou la Croix jusqu’à une case.</li>
       </ul>
     </section>
   </div>

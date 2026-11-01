@@ -48,7 +48,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
     @click.self="emit('close')"
   >
     <section
-      class="paper relative max-h-full w-full max-w-lg overflow-y-auto rounded-sm px-6 py-5"
+      class="paper scrollbar-blood relative max-h-full w-full max-w-lg overflow-y-auto rounded-sm px-6 py-5"
       role="dialog"
       aria-modal="true"
       aria-labelledby="saves-title"
@@ -83,7 +83,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       </form>
 
       <p v-if="!saves.length" class="opacity-70">Aucune sauvegarde pour l’instant.</p>
-      <ul v-else class="flex flex-col gap-2">
+      <!-- About six saves show at once; beyond, the list scrolls. -->
+      <ul v-else class="scrollbar-blood -mr-2 flex max-h-96 flex-col gap-2 overflow-y-auto pr-2">
         <li
           v-for="save in saves"
           :key="save.id"

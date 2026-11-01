@@ -161,9 +161,11 @@ tests/
   Placer quelqu'un efface les notes des autres sur sa ligne et sa colonne,
   dans le même coup (non désactivable).
   Une croix efface toutes les notes de sa case, dans le même coup.
-- **Curseur sur la grille** : il dit ce que fera le clic (`clickEffect`) :
-  crayon plein pour placer, crayon en pointillés pour noter, croix rouge
-  quand personne n'est sélectionné.
+- **Croix** : une fiche de plus, dans la case libre après les 20 suspects
+  (`CastPanel.vue`). Elle est enfoncée dès que personne n'est sélectionné
+  (après un placement, par exemple) ; cliquer dessus désélectionne.
+- **Curseur sur la grille** : il dit aussi ce que fera le clic : crayon plein
+  pour placer, crayon en pointillés pour noter, croix rouge pour barrer.
 - **Annuler / refaire** : un seul historique pour tous les coups (placements,
   croix, notes), `lib/history.ts` ; boutons ↶ ↷, Ctrl+Z, Ctrl+Y ou
   Ctrl+Maj+Z. La sélection n'en fait pas partie. L'état de partie vit dans

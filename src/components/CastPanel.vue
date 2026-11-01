@@ -29,6 +29,7 @@ const emit = defineEmits<{
   press: [person: string, event: PointerEvent]
   verify: []
   mode: [mode: Mode]
+  cross: []
   undo: []
   redo: []
   saves: []
@@ -82,7 +83,9 @@ const showRules = ref(false)
         @saves="emit('saves')"
       />
     </div>
-    <ul class="short:gap-1 grid grid-cols-2 gap-2 p-1 sm:grid-cols-3 lg:min-h-0 lg:overflow-y-auto">
+    <ul
+      class="short:gap-1 grid grid-cols-2 gap-2 p-1 sm:grid-cols-3 lg:min-h-0 lg:overflow-y-auto scrollbar-blood"
+    >
       <li v-for="person in PEOPLE" :key="person.id">
         <button
           type="button"
@@ -104,6 +107,7 @@ const showRules = ref(false)
               <!-- The name on the suspect's color: the legend of their notes on the map. -->
               <span
                 class="inline-flex h-[1.45em] items-center rounded-full px-2 pt-[0.12em] leading-none"
+                :class="{ 'opacity-50 grayscale': placements[person.id] }"
                 :style="{ backgroundColor: colorOf(person.id), color: inkOn(person.id) }"
                 >{{ person.name }}</span
               >
@@ -129,6 +133,33 @@ const showRules = ref(false)
             >
               {{ clue.text }}
             </span>
+          </span>
+        </button>
+      </li>
+      <!-- In the cast's free slot: the cross tool, pressed whenever nobody is picked. -->
+      <li>
+        <button
+          type="button"
+          class="bg-ink text-paper short:py-0.5 flex h-full w-full items-center gap-2 rounded-sm px-2 py-1 text-left shadow-lg transition-transform hover:-rotate-1 focus-visible:outline-3 focus-visible:outline-tape"
+          :class="{ 'ring-blood-bright -rotate-1 ring-4': !selected }"
+          :aria-pressed="!selected"
+          @click="emit('cross')"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            class="text-blood-bright size-9 shrink-0 p-1.5"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 3l10 10M13 3L3 13"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span class="short:gap-0.5 flex min-w-0 flex-col gap-1 leading-tight">
+            <span class="text-sm font-bold">Croix</span>
+            <span class="text-[11px] leading-tight opacity-80">Un clic barre une case</span>
           </span>
         </button>
       </li>

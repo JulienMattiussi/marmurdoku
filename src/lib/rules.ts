@@ -1,4 +1,4 @@
-import { distanceTo, isAwayFromWalls, isInCorner, isNear, neighbors, type Board } from '@/lib/board'
+import { distanceTo, isAwayFromWalls, isInCorner, isNear, type Board } from '@/lib/board'
 import type { FurnitureKind } from '@/lib/furniture'
 import type { Cell, FloorKind, Zone } from '@/lib/grid'
 
@@ -14,16 +14,12 @@ export type PersonRule =
   | { type: 'notOnFurniture'; kinds: FurnitureKind[] }
   | { type: 'nearFurniture'; kinds: FurnitureKind[] }
   | { type: 'notNearFurniture'; kinds: FurnitureKind[] }
-  /** Near one of these pieces with nobody on it ("next to an empty chair"). */
-  | { type: 'nearEmpty'; kinds: FurnitureKind[] }
   | { type: 'alone' }
   | { type: 'notAlone' }
   /** Shares the room with exactly `count` other people, all of them in `among`. */
   | { type: 'roomWith'; count: number; among: string[] }
   | { type: 'sameZoneAs'; person: string }
   | { type: 'columnGap'; person: string; gap: number }
-  /** In a column to the right of this person's (further from column A). */
-  | { type: 'rightOf'; person: string }
   /** On a row above this person's (closer to row 1); exactly `rows` above if given. */
   | { type: 'above'; person: string; rows?: number }
   | { type: 'inCorner' }
@@ -100,17 +96,6 @@ export const personRuleStatus = (
       return verdict(isNear(board, cell, rule.kinds))
     case 'notNearFurniture':
       return verdict(!isNear(board, cell, rule.kinds))
-    case 'nearEmpty': {
-      const zone = zoneAt(board, cell)
-      const empty = neighbors(cell, board.size).filter(
-        (n) =>
-          zoneAt(board, n) === zone &&
-          board.kinds[n.row]![n.col]!.some((kind) => rule.kinds.includes(kind)) &&
-          !Object.values(placements).some((c) => c.row === n.row && c.col === n.col),
-      )
-      if (!empty.length) return 'broken'
-      return complete ? 'ok' : 'open'
-    }
     case 'alone':
       if (sharesZone(board, placements, person, zoneAt(board, cell))) return 'broken'
       return complete ? 'ok' : 'open'
@@ -131,10 +116,6 @@ export const personRuleStatus = (
     case 'columnGap': {
       const other = placements[rule.person]
       return other ? verdict(Math.abs(other.col - cell.col) === rule.gap) : 'open'
-    }
-    case 'rightOf': {
-      const other = placements[rule.person]
-      return other ? verdict(cell.col > other.col) : 'open'
     }
     case 'above': {
       const other = placements[rule.person]

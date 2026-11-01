@@ -58,4 +58,24 @@
     transform: rotate(-8deg);
     opacity: 0.85;
   }
+
+  /* Thin blood-red scrollbar for the lists and dialogs that scroll. */
+  .scrollbar-blood {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-blood) rgb(0 0 0 / 12%);
+  }
+  .scrollbar-blood::-webkit-scrollbar {
+    width: 8px;
+  }
+  .scrollbar-blood::-webkit-scrollbar-track {
+    background: rgb(0 0 0 / 12%);
+    border-radius: 4px;
+  }
+  .scrollbar-blood::-webkit-scrollbar-thumb {
+    background: var(--color-blood);
+    border-radius: 4px;
+  }
+  .scrollbar-blood::-webkit-scrollbar-thumb:hover {
+    background: var(--color-blood-bright);
+  }
 }

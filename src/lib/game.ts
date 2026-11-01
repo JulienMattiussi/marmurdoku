@@ -116,6 +116,9 @@ export const isSolved = (puzzle: Puzzle, placements: Placements) => {
   )
 }
 
-/** What a click on a cell will do, for the cursor over the map. */
-export const clickEffect = (selected: string | null, mode: Mode): 'place' | 'note' | 'cross' =>
+/** What a click on a cell does: place or note for the picked suspect, cross out with nobody picked. */
+export type Tool = Mode | 'cross'
+
+/** What a click on a cell will do, for the cursor over the map and the toolbar. */
+export const clickEffect = (selected: string | null, mode: Mode): Tool =>
   selected ? mode : 'cross'

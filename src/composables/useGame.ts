@@ -59,6 +59,8 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
     )
 
   const effect = computed(() => clickEffect(selected.value, mode.value))
+  /** The cross tool: with nobody picked, a click crosses out. */
+  const deselect = () => (selected.value = null)
 
   const everyonePlaced = computed(() => puzzle.people.every((id) => state.value.placements[id]))
   const verify = () => {
@@ -102,6 +104,7 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
     canUndo,
     canRedo,
     select,
+    deselect,
     click,
     drop,
     load,

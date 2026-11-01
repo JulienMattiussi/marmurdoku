@@ -101,6 +101,20 @@ describe('Tooltip', () => {
   })
 })
 
+describe('Tools', () => {
+  it('presses the cross with nobody picked, and pressing it drops the pick', async () => {
+    render(App)
+    const pressed = (name: RegExp) =>
+      screen.getByRole('button', { name }).getAttribute('aria-pressed')
+    expect(pressed(/^Croix/)).toBe('true')
+    await fireEvent.click(screen.getByRole('button', { name: /^Karen/ }))
+    expect(pressed(/^Croix/)).toBe('false')
+    await fireEvent.click(screen.getByRole('button', { name: /^Croix/ }))
+    expect(pressed(/^Croix/)).toBe('true')
+    expect(screen.getByRole('button', { name: /^Karen/ })).toHaveAttribute('aria-pressed', 'false')
+  })
+})
+
 describe('Notes and undo', () => {
   it('notes positions for the picked suspect, undoes and redoes them', async () => {
     const { container } = render(App)

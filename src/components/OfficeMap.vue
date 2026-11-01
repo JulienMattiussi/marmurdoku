@@ -9,6 +9,7 @@ import { FURNITURE, ZONE_GRID } from '@/data/office'
 import { ZONES } from '@/data/zones'
 import { PEOPLE } from '@/data/people'
 import { FURNITURE_KINDS, furnitureCells, placeableGrid, seatedCells } from '@/lib/furniture'
+import type { Tool } from '@/lib/game'
 import { CELL, cellName, columnName } from '@/lib/geometry'
 import { parseZoneGrid, type Cell } from '@/lib/grid'
 import { zoneBoundaries } from '@/lib/walls'
@@ -22,7 +23,7 @@ const props = defineProps<{
   /** The picked suspect: their notes stand out. */
   selected: string | null
   /** What a click on a cell does: sets the cursor. */
-  effect: 'place' | 'note' | 'cross'
+  effect: Tool
   hoverCell: Cell | null
   selectedCell: Cell | null
   /** Debug: hatch the cells where nobody can stand. */

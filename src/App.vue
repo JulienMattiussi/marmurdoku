@@ -109,6 +109,7 @@ const onPress = (person: string, event: PointerEvent) => {
         @press="onPress"
         @verify="game.verify"
         @mode="game.mode.value = $event"
+        @cross="game.deselect"
         @undo="game.undo"
         @redo="game.redo"
         @saves="showSaves = true"

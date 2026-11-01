@@ -24,7 +24,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
     @click.self="emit('close')"
   >
     <section
-      class="paper relative max-h-full w-full max-w-2xl overflow-y-auto rounded-sm px-6 py-5"
+      class="paper scrollbar-blood relative max-h-full w-full max-w-2xl overflow-y-auto rounded-sm px-6 py-5"
       role="dialog"
       aria-modal="true"
       aria-labelledby="rules-title"
@@ -57,10 +57,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       <h3 class="font-bold tracking-widest uppercase">Les indices</h3>
       <ul class="mb-3 list-disc pl-5">
         <li>
-          « Près de » : sur une case voisine (en haut, en bas, à gauche ou à droite), dans la même
-          zone. On n’est jamais près de quelque chose à travers un mur.
+          « À côté de » : sur une case voisine (en haut, en bas, à gauche ou à droite), dans la même
+          zone. On n’est jamais à côté de quelque chose à travers un mur.
         </li>
-        <li>« Avec quelqu’un » : dans la même zone. « Seul » : seul dans sa zone.</li>
+        <li>« Avec quelqu’un » : dans la même zone.</li>
+        <li>« Seul » : seul dans sa zone.</li>
         <li>Une zone « en hauteur » est à l’étage : la Mezzanine ou l’Aquarium.</li>
         <li>« Assis » peut être sur une chaise, un tabouret ou un canapé.</li>
       </ul>

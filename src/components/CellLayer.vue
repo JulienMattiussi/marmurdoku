@@ -2,6 +2,7 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { CELL, cellName } from '@/lib/geometry'
 import { parseCellName } from '@/lib/solution'
+import type { Tool } from '@/lib/game'
 import type { Cell } from '@/lib/grid'
 
 /**
@@ -21,7 +22,7 @@ const props = defineProps<{
   /** Cell of the picked person, if they are on the map. */
   selectedCell: Cell | null
   /** What a click does, shown by the cursor over the cells. */
-  effect: 'place' | 'note' | 'cross'
+  effect: Tool
 }>()
 
 const emit = defineEmits<{

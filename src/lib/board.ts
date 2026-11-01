@@ -20,7 +20,7 @@ export const buildBoard = (zoneGrid: string[], zones: Zone[], furniture: Furnitu
 }
 
 /** The up to four cells sharing a side with this one, inside the map. */
-export const neighbors = ({ row, col }: Cell, size: number): Cell[] =>
+const neighbors = ({ row, col }: Cell, size: number): Cell[] =>
   [
     { row: row - 1, col },
     { row: row + 1, col },

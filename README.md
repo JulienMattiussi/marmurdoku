@@ -44,9 +44,6 @@ make start   # http://localhost:2020
 `make help` liste toutes les commandes, `make check` vérifie tout (build, lint,
 types, code mort, tests).
 
-## Crédits
-
-Plan redessiné d'après la carte de [Marmemap](https://github.com/JulienMattiussi/Marmemap), avatars
-créés avec [SP-Studio](https://www.sp-studio.de/). Les suspects ont accepté de l'être.
+## Licence
 
 MIT, voir [LICENSE](./LICENSE).

@@ -10,7 +10,7 @@ const avatarsOnMap = (container: Element) =>
 describe('App', () => {
   it('opens on the game title', () => {
     render(App)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Marmerdoku')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Marmurdoku')
   })
 
   it('places the picked person on a clicked cell, and a second click crosses them out', async () => {

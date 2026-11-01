@@ -1,4 +1,4 @@
-# marmerdoku
+# marmurdoku
 
 **Niveau de Murdoku jouable** dont la zone est le plan des bureaux de Marmelab
 et les protagonistes ses employés. Application **100% front-end**, interface en
@@ -262,7 +262,7 @@ tests/
 
 ## SEO et partage
 
-- Publié sur https://marmerdoku.vercel.app. `index.html` porte des
+- Publié sur https://marmurdoku.vercel.app. `index.html` porte des
   `%SITE_URL%` remplacés au build (`vite.config.ts`) : `SITE_URL`, sinon
   l'adresse de production Vercel, sinon celle-ci. Les réseaux refusent les
   URL relatives d'`og:image`.

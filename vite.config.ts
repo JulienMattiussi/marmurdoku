@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 
 const PORT = 2020
-const PRODUCTION_URL = 'https://marmerdoku.vercel.app'
+const PRODUCTION_URL = 'https://marmurdoku.vercel.app'
 
 /**
  * Absolute origin of the deployed site. Crawlers reject relative og:image URLs,

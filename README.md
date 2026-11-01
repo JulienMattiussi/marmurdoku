@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://marmerdoku.vercel.app">
-    <img src="public/og.png" alt="Marmerdoku : meurtre chez Marmelab" width="720" />
+  <a href="https://marmurdoku.vercel.app">
+    <img src="public/og.png" alt="Marmurdoku : meurtre chez Marmelab" width="720" />
   </a>
 </p>
 
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://marmerdoku.vercel.app"><strong>🔪 Ouvrir l'enquête</strong></a>
+  <a href="https://marmurdoku.vercel.app"><strong>🔪 Ouvrir l'enquête</strong></a>
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@
 
 ---
 
-**Marmerdoku** est un niveau de Murdoku, le casse-tête
+**Marmurdoku** est un niveau de Murdoku, le casse-tête
 de logique où l'on résout un meurtre case par case. Le plateau est le vrai plan
 des bureaux de Marmelab, les suspects sont ceux qui y travaillent. Une seule
 solution, et elle se trouve par la déduction, jamais au hasard.

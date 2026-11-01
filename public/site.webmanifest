@@ -1,6 +1,6 @@
 {
-  "name": "Marmerdoku : meurtre chez Marmelab",
-  "short_name": "Marmerdoku",
+  "name": "Marmurdoku : meurtre chez Marmelab",
+  "short_name": "Marmurdoku",
   "description": "Un Murdoku dans les bureaux de Marmelab : démasque le coupable par la logique.",
   "lang": "fr-FR",
   "start_url": ".",

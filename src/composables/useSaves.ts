@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import type { GameState } from '@/lib/game'
 import { addSave, parseSaves, removeSave, type Save } from '@/lib/saves'
 
-const STORAGE_KEY = 'marmerdoku:saves'
+const STORAGE_KEY = 'marmurdoku:saves'
 
 /**
  * The player's saved grids, kept in this browser's localStorage. Storage can

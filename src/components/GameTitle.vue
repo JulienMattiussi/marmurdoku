@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BloodDrip from '@/components/BloodDrip.vue'
 
-/** "Marmerdoku" in horror letters, with blood dripping from it; `big` on the share image. */
+/** "Marmurdoku" in horror letters, with blood dripping from it; `big` on the share image. */
 defineProps<{ big?: boolean }>()
 </script>
 
@@ -11,7 +11,7 @@ defineProps<{ big?: boolean }>()
       class="font-horror text-blood-bright leading-none drop-shadow-[0_3px_0_#000]"
       :class="big ? 'text-[6.4rem]' : 'short:text-5xl text-6xl'"
     >
-      Marmerdoku
+      Marmurdoku
     </h1>
     <BloodDrip
       class="text-blood-bright w-full"

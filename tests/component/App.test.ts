@@ -55,14 +55,26 @@ describe('Vérifier', () => {
     expect(screen.getByRole('button', { name: 'Vérifier' })).toBeDisabled()
   })
 
-  it('closes the case on the solution', async () => {
+  it('closes the case on the solution, through the reconstruction', async () => {
+    vi.useFakeTimers()
     const { container } = render(App)
     await placeEveryone(container, SOLUTION)
     await fireEvent.click(screen.getByRole('button', { name: 'Vérifier' }))
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'La scène du crime correspond aux témoignages',
+    )
+    await fireEvent.click(screen.getByRole('button', { name: 'Voir la reconstitution' }))
+    expect(screen.queryByRole('alert')).toBeNull()
+    // After the first zoom: Antoine asleep in his bed.
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(container.querySelector('.zzz')).not.toBeNull()
+    await fireEvent.click(screen.getByRole('button', { name: /^Passer/ }))
     expect(screen.getByRole('alert')).toHaveTextContent('Affaire classée')
+    expect(screen.getByRole('alert')).toHaveTextContent('Thiery !')
+    vi.useRealTimers()
   })
 
-  it('reopens a closed case when a save is loaded', async () => {
+  it('reopens a closed case when a save is loaded, after the reconstruction', async () => {
     localStorage.clear()
     const { container } = render(App)
     await fireEvent.click(screen.getByRole('button', { name: 'Sauvegardes' }))
@@ -70,6 +82,8 @@ describe('Vérifier', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Fermer les sauvegardes' }))
     await placeEveryone(container, SOLUTION)
     await fireEvent.click(screen.getByRole('button', { name: 'Vérifier' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Voir la reconstitution' }))
+    await fireEvent.click(screen.getByRole('button', { name: /^Passer/ }))
     await fireEvent.click(screen.getByRole('button', { name: 'Sauvegardes' }))
     await fireEvent.click(screen.getByRole('button', { name: /^Charger/ }))
     await fireEvent.click(screen.getByRole('button', { name: 'Oui' }))

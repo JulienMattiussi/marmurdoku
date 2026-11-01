@@ -7,11 +7,17 @@ import type { ClueRef } from '@/lib/solver'
 const SHOWN = 3
 
 /**
- * The big message in front of the map after "Vérifier": case closed, or try
- * again with up to three broken rules, until the player's "OK".
+ * The big message in front of the map after "Vérifier". Solved: the crime
+ * scene matches the testimonies, with the reconstruction to watch (`intro`),
+ * then the culprit unmasked (`end`). Wrong: up to three broken rules, until
+ * the player's "OK".
  */
-const props = defineProps<{ verdict: 'solved' | 'wrong'; broken: ClueRef[] }>()
-const emit = defineEmits<{ ok: [] }>()
+const props = defineProps<{
+  verdict: 'solved' | 'wrong'
+  broken: ClueRef[]
+  stage: 'intro' | 'end'
+}>()
+const emit = defineEmits<{ ok: []; watch: [] }>()
 
 const murderer = PEOPLE.find((person) => person.id === MURDERER)!
 const nameOf = (id: string) => PEOPLE.find((person) => person.id === id)!.name
@@ -28,6 +34,8 @@ const heading = computed(() =>
       ? 'Ces règles ne sont pas respectées'
       : 'Cette règle n’est pas respectée',
 )
+const primary =
+  'bg-blood text-bone hover:bg-blood-bright rounded-sm px-5 py-2 font-bold tracking-widest uppercase shadow-lg focus-visible:outline-3 focus-visible:outline-tape'
 const okButton = ref<HTMLButtonElement>()
 onMounted(() => okButton.value?.focus())
 </script>
@@ -38,7 +46,30 @@ onMounted(() => okButton.value?.focus())
     role="alert"
   >
     <div
-      v-if="verdict === 'solved'"
+      v-if="verdict === 'solved' && stage === 'intro'"
+      class="paper flex max-w-md -rotate-2 flex-col items-center gap-4 rounded-sm px-8 py-6 text-center"
+    >
+      <span class="stamp text-base">Témoignages vérifiés</span>
+      <p class="text-lg">La scène du crime correspond aux témoignages.</p>
+      <button
+        ref="okButton"
+        type="button"
+        class="flex flex-col items-center gap-1.5"
+        :class="primary"
+        @click="emit('watch')"
+      >
+        <!-- A film camera: the reconstruction is a film of the scene. -->
+        <svg viewBox="0 0 24 16" class="h-7 w-10" fill="currentColor" aria-hidden="true">
+          <rect x="1" y="3" width="15" height="12" rx="2" />
+          <path d="M17 7.5l6-3.5v12l-6-3.5z" />
+          <circle cx="5" cy="2.5" r="2.5" />
+          <circle cx="11.5" cy="2.5" r="2.5" />
+        </svg>
+        Voir la reconstitution
+      </button>
+    </div>
+    <div
+      v-else-if="verdict === 'solved'"
       class="paper flex max-w-md -rotate-2 flex-col items-center gap-3 rounded-sm px-8 py-6 text-center"
     >
       <span class="stamp text-base">Affaire classée</span>
@@ -48,6 +79,13 @@ onMounted(() => okButton.value?.focus())
         Seul avec la victime, c’est lui le coupable. Tous les suspects sont à leur place : bravo,
         inspecteur.
       </p>
+      <button
+        type="button"
+        class="text-blood hover:text-blood-bright text-sm font-bold tracking-widest uppercase underline"
+        @click="emit('watch')"
+      >
+        Revoir la reconstitution
+      </button>
     </div>
     <div
       v-else

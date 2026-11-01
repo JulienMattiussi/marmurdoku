@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import BloodDrip from '@/components/BloodDrip.vue'
 import CastPanel from '@/components/CastPanel.vue'
 import CrossIcon from '@/components/CrossIcon.vue'
@@ -8,9 +8,12 @@ import OfficeMap from '@/components/OfficeMap.vue'
 import VerdictOverlay from '@/components/VerdictOverlay.vue'
 import { useGame } from '@/composables/useGame'
 import { useDrag } from '@/composables/useDrag'
+import { useReconstruction } from '@/composables/useReconstruction'
 import { useSaves } from '@/composables/useSaves'
 import { avatarUrl } from '@/data/people'
+import { RECONSTRUCTION } from '@/data/reconstruction'
 import { CROSS, emptyGame } from '@/lib/game'
+import { timeline } from '@/lib/reconstruction'
 import type { Save } from '@/lib/saves'
 import type { Cell } from '@/lib/grid'
 import { puzzleStatus } from '@/lib/solver'
@@ -27,6 +30,15 @@ const game = useGame(
   debug ? { ...emptyGame(), placements: { ...SOLUTION_PLACEMENTS } } : emptyGame(),
 )
 const drag = useDrag(game.drop)
+
+const reconstruction = useReconstruction(() =>
+  timeline(RECONSTRUCTION, game.state.value.placements, PUZZLE.board.size),
+)
+/**
+ * Any new verdict puts the reconstruction away: a closed case starts on the
+ * invitation to watch it, and a save loaded after it gives the map back.
+ */
+watch(game.verdict, () => reconstruction.reset())
 
 const saves = useSaves()
 const showSaves = ref(false)
@@ -74,14 +86,33 @@ const onCross = () => {
         :hover-cell="drag.hoverCell.value"
         :selected-cell="selectedCell"
         :show-blocked="debug"
+        :still="reconstruction.frame.value"
         @cell-click="onCellClick"
         @cell-press="onCellPress"
       />
+      <template v-if="reconstruction.stage.value === 'playing'">
+        <!-- A click anywhere on the map moves on to the next still. -->
+        <button
+          type="button"
+          class="absolute inset-0 cursor-pointer"
+          aria-label="Image suivante de la reconstitution"
+          @click="reconstruction.next"
+        />
+        <button
+          type="button"
+          class="bg-ink/85 text-tape hover:bg-blood hover:text-bone absolute top-2 right-2 rounded-sm px-3 py-1 text-sm font-bold tracking-widest uppercase shadow-lg"
+          @click="reconstruction.skip"
+        >
+          Passer ⏭
+        </button>
+      </template>
       <VerdictOverlay
-        v-if="game.verdict.value"
+        v-else-if="game.verdict.value"
         :verdict="game.verdict.value"
         :broken="game.broken.value"
+        :stage="reconstruction.stage.value"
         @ok="game.dismiss"
+        @watch="reconstruction.play"
       />
     </div>
     <div class="flex flex-col gap-4 lg:min-h-0 lg:flex-1">

@@ -13,8 +13,8 @@ Casting : les 20 participants actifs de `marmelab-en-voyage` ; François est
 la victime, Thiery le coupable. Leurs avatars y sont copiés, réduits à 160px,
 dans `public/avatars/<id>.png` (fond de Thiery détouré, signature « SP-STUDIO.DE » retirée).
 
-> Le plan et une solution valide sont en place ; les indices et l'interface de
-> jeu restent à faire.
+> Le niveau est jouable de bout en bout : plan, indices validés (solution
+> unique), interface de jeu, reconstitution finale.
 
 ---
 
@@ -46,13 +46,14 @@ src/
 │   ├── OfficeMap.vue         # Le plan en SVG : sols, meubles, quadrillage, murs, noms des pièces
 │   ├── FloorPatterns.vue     # Motifs SVG des sols (un par FloorKind) et ombre portée
 │   ├── FurniturePiece.vue    # Place un meuble sur la grille, l'oriente, choisit son sprite
-│   ├── PeopleLayer.vue       # Avatars sur leurs cases, halo blanc qui suit leur contour
+│   ├── PeopleLayer.vue       # Avatars sur leurs cases, halo blanc qui suit leur contour ; marches et effets de la reconstitution
 │   ├── GameToolbar.vue       # Vérifier, Placer / Noter, annuler / refaire, Sauvegardes
 │   ├── SavesDialog.vue       # Fenêtre des sauvegardes : nommer, charger, supprimer
 │   ├── NotesLayer.vue        # Positions notées : initiale sur la couleur du suspect, 3x3 par case
 │   ├── CellLayer.vue         # Couche du joueur : croix, survol, sélection, infobulle, cibles de clic et de dépôt (data-cell)
 │   ├── BloodDrip.vue         # Coulure de sang sous le titre
-│   ├── VerdictOverlay.vue    # Message de fin devant la carte : « Affaire classée » ou « Raté ! »
+│   ├── VerdictOverlay.vue    # Message devant la carte : « Raté ! », invitation à la reconstitution, « Affaire classée »
+│   ├── ReconstructionLayer.vue # Reconstitution : bulles, zzz, notes
 │   ├── RulesDialog.vue       # Fenêtre des règles (bouton « Règles » du rapport d'enquête)
 │   ├── CrossIcon.vue         # La croix de la fiche Croix et de son glisser
 │   ├── CastPanel.vue         # « (02) Les personnages » : les 20 avatars, à droite de la carte
@@ -60,12 +61,14 @@ src/
 ├── composables/
 │   ├── useGame.ts            # La partie : historique, sélection, mode, verdict, raccourcis
 │   ├── useSaves.ts           # Sauvegardes nommées, dans le localStorage
+│   ├── useReconstruction.ts  # Joue la reconstitution, image par image
 │   └── useDrag.ts            # Glisser un personnage ou la croix (souris ou tactile) vers une case
 ├── data/
 │   ├── zones.ts              # Les 14 zones : code de grille, nom, sol, étage
 │   ├── office.ts             # Grille 20x20 des zones et liste des meubles
 │   ├── people.ts             # Les 20 personnages, la victime, le coupable
 │   ├── clues.ts              # Les indices : texte affiché et règles vérifiées par le solveur et le jeu
+│   ├── reconstruction.ts     # Le script de la reconstitution, scène par scène
 │   └── solution.ts           # La solution, en coordonnées de la carte (« B3 »)
 ├── lib/
 │   ├── grid.ts               # Types Zone / Cell, lecture de la grille des zones
@@ -79,6 +82,7 @@ src/
 │   ├── game.ts               # État du joueur et ses coups : clic (placer, croix, noter), dépôt, verdict
 │   ├── history.ts            # Annuler / refaire sur des états immuables
 │   ├── saves.ts              # Liste des sauvegardes : ajout, retrait, lecture tolérante
+│   ├── reconstruction.ts     # Script de la reconstitution en suite d'images : caméra, positions, bulles
 │   └── geometry.ts           # Taille d'une case, lettres des colonnes
 ├── puzzle.ts                 # Le niveau assemblé depuis data/ (plateau, personnages, indices, solution)
 ├── App.vue                   # La page
@@ -187,8 +191,34 @@ tests/
   Échec : « Raté ! » devant la carte cite jusqu'à trois règles enfreintes
   (une par ligne et par colonne d'abord, puis le meurtre, les indices
   généraux, ceux des fiches), et reste jusqu'au clic sur « OK ». Succès :
-  « Affaire classée » révèle le coupable, reste affiché et fige la partie, jusqu'au chargement d'une sauvegarde
-  (`VerdictOverlay.vue`).
+  « La scène du crime correspond aux témoignages » et « Voir la
+  reconstitution », puis « Affaire classée » révèle le coupable, reste
+  affiché et fige la partie, jusqu'au chargement d'une sauvegarde
+  (`VerdictOverlay.vue`). Les parties à deux affirmations d'un indice
+  (`parts` dans `data/clues.ts`) sont citées séparément.
+
+## Reconstitution
+
+- Le script est dans `data/reconstruction.ts` : une scène par groupe de
+  suspects, le meurtre en dernier. Chaque scène zoome sur son casting, là
+  où il finit la scène (un marcheur peut entrer dans le cadre ; `frame`
+  ajoute des cases au cadre), joue ses temps (réplique, marche, effets :
+  zzz, notes, flou sous le haut de la tête, secousses du baby-foot, chute),
+  puis dézoome. Les effets du premier temps sont là dès le début du zoom et
+  durent jusqu'à la scène suivante (ceux du meurtre restent derrière le
+  message de fin). Les marcheurs restent où ils sont allés.
+- Les marches font quelques cases sans traverser de mur, sauf celles
+  marquées `enters` (Guiom qui rejoint la salle de pause), qui changent de
+  pièce une fois ; `tests/unit/reconstruction.test.ts` le vérifie.
+- `lib/reconstruction.ts` en tire une suite d'images (`timeline`), que
+  `composables/useReconstruction.ts` joue : un clic sur la carte passe à
+  l'image suivante, « Passer » va au message de fin, qui garde la dernière
+  image derrière lui.
+- Rendu : la caméra est une transformation CSS de la carte (`OfficeMap`),
+  les personnes marchent par transition (`PeopleLayer`), les bulles et
+  effets sont dans `ReconstructionLayer.vue`, à taille constante à
+  l'écran. Avec `prefers-reduced-motion`, zooms et marches deviennent des
+  coupes franches.
 
 ## Indices et solveur
 

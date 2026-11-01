@@ -5,6 +5,7 @@ import FloorPatterns from '@/components/FloorPatterns.vue'
 import FurniturePiece from '@/components/FurniturePiece.vue'
 import NotesLayer from '@/components/NotesLayer.vue'
 import PeopleLayer from '@/components/PeopleLayer.vue'
+import ReconstructionLayer from '@/components/ReconstructionLayer.vue'
 import { FURNITURE, ZONE_GRID } from '@/data/office'
 import { ZONES } from '@/data/zones'
 import { PEOPLE } from '@/data/people'
@@ -12,6 +13,7 @@ import { FURNITURE_KINDS, furnitureCells, placeableGrid, seatedCells } from '@/l
 import type { Tool } from '@/lib/game'
 import { CELL, cellName, columnName } from '@/lib/geometry'
 import { parseZoneGrid, type Cell } from '@/lib/grid'
+import type { Frame } from '@/lib/reconstruction'
 import { zoneBoundaries } from '@/lib/walls'
 
 const props = defineProps<{
@@ -28,6 +30,8 @@ const props = defineProps<{
   selectedCell: Cell | null
   /** Debug: hatch the cells where nobody can stand. */
   showBlocked?: boolean
+  /** The reconstruction's current still: it takes over the people, the camera and the bubbles. */
+  still?: Frame
 }>()
 
 const emit = defineEmits<{
@@ -37,6 +41,18 @@ const emit = defineEmits<{
 
 const zones = parseZoneGrid(ZONE_GRID, ZONES)
 const size = zones.length * CELL
+
+/** Rows of yard drawn below the map, only ever seen by the reconstruction's camera. */
+const BELOW = 4
+
+/** The camera of the reconstruction, as a transform of the map (the whole map without one). */
+const cameraStyle = computed(() => {
+  const camera = props.still?.camera
+  if (!camera) return { transform: 'scale(1) translate(0px, 0px)' }
+  return {
+    transform: `scale(${zones.length / camera.size}) translate(${-camera.col * CELL}px, ${-camera.row * CELL}px)`,
+  }
+})
 
 const placeable = placeableGrid(zones, FURNITURE)
 const inRoom = zones.map((row) => row.map(Boolean))
@@ -126,68 +142,103 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
     aria-label="Plan des bureaux de Marmelab"
   >
     <FloorPatterns />
-    <rect
-      v-for="cell in cells"
-      :key="cell.key"
-      :x="cell.x"
-      :y="cell.y"
-      :width="CELL"
-      :height="CELL"
-      :fill="cell.fill"
-    />
+    <clipPath id="map-area">
+      <rect :width="size" :height="size" />
+    </clipPath>
+    <g clip-path="url(#map-area)">
+      <g class="camera" :style="cameraStyle">
+        <!-- More yard below the map, for a camera centered on the yard's people. -->
+        <rect
+          :y="size"
+          :width="size"
+          :height="BELOW * CELL"
+          :fill="`url(#floor-${zones.at(-1)![0]!.floor})`"
+        />
+        <g class="grid-lines">
+          <path
+            v-for="i in zones.length - 1"
+            :key="i"
+            :d="`M${i * CELL} ${size}v${BELOW * CELL}`"
+          />
+          <path v-for="j in BELOW" :key="`below-${j}`" :d="`M0 ${size + j * CELL}H${size}`" />
+        </g>
+        <rect
+          v-for="cell in cells"
+          :key="cell.key"
+          :x="cell.x"
+          :y="cell.y"
+          :width="CELL"
+          :height="CELL"
+          :fill="cell.fill"
+        />
 
-    <FurniturePiece
-      v-for="(item, i) in furniture"
-      :key="i"
-      :piece="item.piece"
-      :seated="item.seated"
-    />
+        <FurniturePiece
+          v-for="(item, i) in furniture"
+          :key="i"
+          :piece="item.piece"
+          :seated="item.seated"
+        />
 
-    <g class="grid-lines">
-      <path
-        v-for="i in zones.length - 1"
-        :key="i"
-        :d="`M${i * CELL} 0V${size}M0 ${i * CELL}H${size}`"
-      />
+        <g class="grid-lines">
+          <path
+            v-for="i in zones.length - 1"
+            :key="i"
+            :d="`M${i * CELL} 0V${size}M0 ${i * CELL}H${size}`"
+          />
+        </g>
+
+        <g v-for="s in segments" :key="s.key" :class="`boundary boundary--${s.style}`">
+          <line :x1="s.x1" :y1="s.y1" :x2="s.x2" :y2="s.y2" />
+        </g>
+
+        <g v-if="showBlocked" class="blocked">
+          <rect
+            v-for="cell in blocked"
+            :key="cell.key"
+            :x="cell.x"
+            :y="cell.y"
+            :width="CELL"
+            :height="CELL"
+          />
+        </g>
+
+        <g v-for="label in labels" :key="label.id" class="zone-label">
+          <text :x="label.x" :y="label.y">{{ label.name }}</text>
+        </g>
+
+        <template v-if="still">
+          <PeopleLayer :placements="still.positions" :effects="still.effects" />
+          <ReconstructionLayer
+            :positions="still.positions"
+            :lines="still.lines"
+            :effects="still.effects"
+            :camera="still.camera ?? { row: 0, col: 0, size: zones.length }"
+            :map-size="zones.length"
+          />
+        </template>
+        <template v-else>
+          <NotesLayer :notes="notes" :placements="placements" :selected="selected" />
+          <PeopleLayer :placements="placements" />
+
+          <CellLayer
+            :in-room="inRoom"
+            :placeable="placeable"
+            :labels="cellLabels"
+            :crosses="crosses"
+            :hover-cell="hoverCell"
+            :selected-cell="selectedCell"
+            :effect="effect"
+            @click="emit('cellClick', $event)"
+            @press="(cell, event) => emit('cellPress', cell, event)"
+          />
+        </template>
+      </g>
     </g>
-
-    <g v-for="s in segments" :key="s.key" :class="`boundary boundary--${s.style}`">
-      <line :x1="s.x1" :y1="s.y1" :x2="s.x2" :y2="s.y2" />
-    </g>
-
-    <g v-if="showBlocked" class="blocked">
-      <rect
-        v-for="cell in blocked"
-        :key="cell.key"
-        :x="cell.x"
-        :y="cell.y"
-        :width="CELL"
-        :height="CELL"
-      />
-    </g>
-
-    <g v-for="label in labels" :key="label.id" class="zone-label">
-      <text :x="label.x" :y="label.y">{{ label.name }}</text>
-    </g>
-
-    <NotesLayer :notes="notes" :placements="placements" :selected="selected" />
-    <PeopleLayer :placements="placements" />
-
-    <CellLayer
-      :in-room="inRoom"
-      :placeable="placeable"
-      :labels="cellLabels"
-      :crosses="crosses"
-      :hover-cell="hoverCell"
-      :selected-cell="selectedCell"
-      :effect="effect"
-      @click="emit('cellClick', $event)"
-      @press="(cell, event) => emit('cellPress', cell, event)"
-    />
 
     <rect x="-3" y="-3" :width="size + 6" :height="size + 6" class="frame" />
 
-    <g class="coordinates" aria-hidden="true">
+    <!-- Zoomed in, the letters and numbers around the map no longer match: they fade out. -->
+    <g class="coordinates" :class="{ 'coordinates--zoomed': still?.camera }" aria-hidden="true">
       <template v-for="tick in ticks" :key="tick.i">
         <text :x="tick.at" :y="-MARGIN / 2">{{ columnName(tick.i) }}</text>
         <text :x="tick.at" :y="size + MARGIN / 2">{{ columnName(tick.i) }}</text>
@@ -234,6 +285,23 @@ const ticks = zones.map((_, i) => ({ i, at: i * CELL + CELL / 2 }))
 .boundary--floor line {
   stroke: var(--color-wall);
   stroke-width: 8;
+}
+/* The reconstruction's zooms (ZOOM_MS in lib/reconstruction.ts); a cut with reduced motion. */
+.camera {
+  transform-origin: 0 0;
+  transition: transform 1.2s ease-in-out;
+}
+.coordinates {
+  transition: opacity 0.6s;
+}
+.coordinates--zoomed {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .camera,
+  .coordinates {
+    transition: none;
+  }
 }
 .frame {
   fill: none;

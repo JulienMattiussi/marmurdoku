@@ -47,6 +47,22 @@ describe('clickCell', () => {
 })
 
 describe('placing', () => {
+  it('crosses out the free cells of their row and column, crosses the player can clear', () => {
+    // A 3x3 board whose middle cell nobody can stand on; Julio stands on C1.
+    const placeable = [
+      [true, true, true],
+      [true, false, true],
+      [true, true, true],
+    ]
+    const C1 = { row: 0, col: 2 }
+    const start = clickCell(emptyGame(), C1, 'julio')
+    const state = clickCell(start, A1, 'karen', 'place', placeable)
+    expect(state.crosses).toEqual(['B1', 'A2', 'A3'])
+    expect(clickCell(state, { row: 0, col: 1 }, null).crosses).toEqual(['A2', 'A3'])
+    expect(clickCell(state, A1, 'karen').crosses).toEqual(['B1', 'A2', 'A3'])
+    expect(dropOn(start, 'karen', A1, placeable).crosses).toEqual(['B1', 'A2', 'A3'])
+  })
+
   it('clears the other suspects’ notes on the same row and column, in one move', () => {
     let state = emptyGame()
     for (const cell of [

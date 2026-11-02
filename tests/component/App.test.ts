@@ -13,8 +13,9 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Marmurdoku')
   })
 
-  it('places the picked person on a clicked cell, and a second click crosses them out', async () => {
+  it('places the picked person on a clicked cell, crossing out their row and column, and a second click crosses them out', async () => {
     const { container } = render(App)
+    const crosses = () => container.querySelectorAll('.cross').length
     const karen = screen.getByRole('button', { name: /^Karen/ })
     await fireEvent.click(karen)
     expect(karen).toHaveAttribute('aria-pressed', 'true')
@@ -22,9 +23,11 @@ describe('App', () => {
     expect(avatarsOnMap(container)).toEqual(['avatars/karen.png'])
     expect(karen).toHaveAttribute('aria-pressed', 'false')
     expect(karen).toHaveTextContent('S8')
+    const lineCrosses = crosses()
+    expect(lineCrosses).toBeGreaterThan(10)
     await fireEvent.click(cell(container, 'S8'))
     expect(avatarsOnMap(container)).toEqual([])
-    expect(container.querySelectorAll('.cross')).toHaveLength(1)
+    expect(crosses()).toBe(lineCrosses + 1)
   })
 
   it('crosses out a cell when nobody is picked', async () => {

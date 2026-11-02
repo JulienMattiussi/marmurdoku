@@ -29,10 +29,12 @@ const personAt = (state: GameState, cell: Cell) =>
 
 /**
  * Puts a person on a cell, moving them if already placed and freeing the cell
- * first. The other suspects' notes on that row and column go: nobody else can
- * stand there any more. All of it is one move for undo.
+ * first. Nobody else can stand on that row and column any more: the other
+ * suspects' notes there go, and its free `placeable` cells get crossed out,
+ * crosses the player can then clear like any other. All of it is one move
+ * for undo.
  */
-const put = (state: GameState, person: string, cell: Cell): GameState => {
+const put = (state: GameState, person: string, cell: Cell, placeable: boolean[][]): GameState => {
   const placements = { ...state.placements }
   const occupant = personAt(state, cell)
   if (occupant) delete placements[occupant]
@@ -48,11 +50,16 @@ const put = (state: GameState, person: string, cell: Cell): GameState => {
       id === person ? names : names.filter((name) => !sameLine(name)),
     ]),
   )
-  return {
-    placements,
-    crosses: state.crosses.filter((name) => name !== cellName(cell)),
-    notes,
-  }
+  const lineCells = placeable.flatMap((cells, row) =>
+    cells.flatMap((free, col) =>
+      free && (row === cell.row) !== (col === cell.col) ? [{ row, col }] : [],
+    ),
+  )
+  const added = lineCells
+    .filter((other) => !Object.values(placements).some((p) => cellName(p) === cellName(other)))
+    .map(cellName)
+  const crosses = [...new Set([...state.crosses, ...added])]
+  return { placements, crosses: crosses.filter((name) => name !== cellName(cell)), notes }
 }
 
 /** Crosses a cell out over whoever stood there; a cross rules the cell out for everyone, so its notes go too. */
@@ -92,11 +99,13 @@ export const clickCell = (
   cell: Cell,
   selected: string | null,
   mode: Mode = 'place',
+  /** Placeable cells, crossed out on a placement's row and column (none without). */
+  placeable: boolean[][] = [],
 ): GameState => {
   if (mode === 'note' && selected) return toggleNote(state, selected, cell)
   const name = cellName(cell)
   if (selected) {
-    if (personAt(state, cell) !== selected) return put(state, selected, cell)
+    if (personAt(state, cell) !== selected) return put(state, selected, cell, placeable)
     const placements = { ...state.placements }
     delete placements[selected]
     return { ...state, placements }
@@ -108,8 +117,12 @@ export const clickCell = (
 }
 
 /** Dropping a dragged person, or the cross, on a cell replaces whatever was there. */
-export const dropOn = (state: GameState, dragged: string, cell: Cell): GameState =>
-  dragged === CROSS ? crossOut(state, cell) : put(state, dragged, cell)
+export const dropOn = (
+  state: GameState,
+  dragged: string,
+  cell: Cell,
+  placeable: boolean[][] = [],
+): GameState => (dragged === CROSS ? crossOut(state, cell) : put(state, dragged, cell, placeable))
 
 /** The board rules a check names when broken, before the clues. */
 const ONE_PER_LINE = 'Exactement une personne par ligne et par colonne'

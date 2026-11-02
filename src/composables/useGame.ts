@@ -35,7 +35,7 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
   }
 
   const click = (cell: Cell) => {
-    play(clickCell(state.value, cell, selected.value, mode.value))
+    play(clickCell(state.value, cell, selected.value, mode.value, puzzle.board.placeable))
     // A placement is done with the pick; notes keep it, to note several cells.
     if (mode.value === 'place' && selected.value && state.value.placements[selected.value]) {
       selected.value = null
@@ -53,7 +53,7 @@ export const useGame = (puzzle: Puzzle, start: GameState = emptyGame()) => {
 
   /** Drops a suspect, or the cross (`CROSS`), on a cell. */
   const drop = (dragged: string, cell: Cell) => {
-    play(dropOn(state.value, dragged, cell))
+    play(dropOn(state.value, dragged, cell, puzzle.board.placeable))
     selected.value = null
   }
 

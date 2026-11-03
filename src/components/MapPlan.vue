@@ -57,11 +57,25 @@ const furniture = [
   seated: piece.kind === 'desk' ? seatedCells(piece, FURNITURE) : undefined,
 }))
 
+/**
+ * Room names grow with the room, in three sizes by area in cells: a large
+ * room's name must clearly outsize what lies under it (players took the
+ * Communs for their stairs), a small room's must fit.
+ */
+const labelSize = (area: number) => (area >= 30 ? 'large' : area >= 15 ? 'medium' : 'small')
+
 /** Room names, written in the bottom-left cell of each room. */
 const labels = ZONES.map((zone) => {
   const r = zones.length - 1 - [...zones].reverse().findIndex((row) => row.includes(zone))
   const c = zones[r]!.indexOf(zone)
-  return { id: zone.id, name: zone.name, x: c * CELL + 9, y: (r + 1) * CELL - 8 }
+  const area = zones.flat().filter((other) => other === zone).length
+  return {
+    id: zone.id,
+    name: zone.name,
+    x: c * CELL + 9,
+    y: (r + 1) * CELL - 8,
+    size: labelSize(area),
+  }
 })
 </script>
 
@@ -119,7 +133,9 @@ const labels = ZONES.map((zone) => {
   </g>
 
   <g v-for="label in labels" :key="label.id" class="zone-label">
-    <text :x="label.x" :y="label.y">{{ label.name }}</text>
+    <text :x="label.x" :y="label.y" :class="`zone-label--${label.size}`">
+      {{ label.name }}
+    </text>
   </g>
 </template>
 
@@ -158,5 +174,13 @@ const labels = ZONES.map((zone) => {
   stroke: rgb(255 255 255 / 85%);
   stroke-width: 3px;
   stroke-linejoin: round;
+}
+.zone-label .zone-label--medium {
+  font-size: 19px;
+  stroke-width: 4px;
+}
+.zone-label .zone-label--large {
+  font-size: 26px;
+  stroke-width: 5px;
 }
 </style>

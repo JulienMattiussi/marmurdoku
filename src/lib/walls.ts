@@ -6,20 +6,18 @@ export interface Segment {
   x2: number
   y2: number
   /**
-   * wall: between rooms; fence: between two outdoor spaces; railing: edge of a
-   * mezzanine over the void; floor: cut line between the upper and ground floors.
+   * wall: between two zones; railing: edge of a mezzanine over the void;
+   * floor: cut line between the upper and ground floors.
    */
-  style: 'wall' | 'fence' | 'railing' | 'floor'
+  style: 'wall' | 'railing' | 'floor'
 }
 
-const OUTDOOR = new Set(['concrete', 'paving'])
-const isOutdoor = (zone: Zone | null) => !!zone && OUTDOOR.has(zone.floor)
 const isUpper = (zone: Zone | null) => zone?.level === 'upper'
 
 const boundaryStyle = (a: Zone | null, b: Zone | null): Segment['style'] => {
   if (!a || !b) return 'railing'
   if (isUpper(a) !== isUpper(b)) return 'floor'
-  return isOutdoor(a) && isOutdoor(b) ? 'fence' : 'wall'
+  return 'wall'
 }
 
 /**

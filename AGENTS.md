@@ -84,7 +84,7 @@ src/
 ├── lib/
 │   ├── grid.ts               # Types Zone / Cell, lecture de la grille des zones
 │   ├── furniture.ts          # Types de meubles, cases couvertes, cases occupables
-│   ├── walls.ts              # Segments entre zones (mur, clôture, garde-corps, plancher)
+│   ├── walls.ts              # Segments entre zones (mur, garde-corps, plancher)
 │   ├── board.ts              # Plateau pour les règles : zones, cases plaçables, meubles par case, « près de »
 │   ├── rules.ts              # Règles des indices (par personne, globales, meurtre) : ok / enfreinte / ouverte
 │   ├── solver.ts             # Vérifie un placement complet (puzzleStatus), cherche les solutions (solve)
@@ -123,9 +123,9 @@ tests/
   de la bande est le vide sur le Grand open space
   (`.` dans la grille, aucune personne possible).
 - Les murs ne sont pas des cases : ils passent sur les bords entre deux zones
-  (`zoneBoundaries`). Entre deux zones extérieures (Communs, Cour) c'est une
-  clôture ; au bord du vide, un garde-corps ; entre l'étage et le
-  rez-de-chaussée, un trait de plancher.
+  (`zoneBoundaries`), y compris entre les Communs et la Cour ; au bord du
+  vide, un garde-corps ; entre l'étage et le rez-de-chaussée, un trait de
+  plancher.
 - **Occupation des cases** : une personne peut se tenir sur le sol ou sur un
   meuble marqué `occupiable` dans `FURNITURE_KINDS` (sièges, lit, tapis,
   toilettes, douche). Les autres meubles bloquent leurs cases, même posés

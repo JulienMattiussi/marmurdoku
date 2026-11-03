@@ -9,7 +9,7 @@ import { zoneBoundaries } from '@/lib/walls'
 
 /**
  * The office plan itself, nobody on it: floors, furniture, the dashed grid,
- * walls and fences, room names. Drawn in map units (CELL per cell), inside an
+ * walls, room names. Drawn in map units (CELL per cell), inside an
  * <svg> that brings the floor patterns (FloorPatterns.vue).
  */
 defineProps<{
@@ -138,11 +138,6 @@ const labels = ZONES.map((zone) => {
 .boundary--wall line {
   stroke: var(--color-wall);
   stroke-width: 6;
-}
-.boundary--fence line {
-  stroke: #8a8270;
-  stroke-width: 3;
-  stroke-dasharray: 2 6;
 }
 .boundary--railing line {
   stroke: #f7f4ef;

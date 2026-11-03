@@ -76,6 +76,9 @@ const frame = computed(() => {
   }
 })
 
+/** Frame of the stairs and landings: pale, so the Communs' name outweighs them. */
+const STAIR_FRAME = '#a8825c'
+
 /** Treads of a flight of stairs, about 7px deep whatever its length. */
 const steps = computed(() => Math.max(3, Math.round(frame.value.ih / 7.2)))
 const stepPitch = computed(() => frame.value.ih / steps.value)
@@ -351,7 +354,7 @@ const spines = computed(() => {
 
   <!-- Treads in two alternating tones, so joined flights read as one; chevrons give the way. -->
   <g v-else-if="kind === 'stairs'">
-    <rect :x="frame.x" :y="frame.y" :width="frame.w" :height="frame.h" fill="#6e4a2c" />
+    <rect :x="frame.x" :y="frame.y" :width="frame.w" :height="frame.h" :fill="STAIR_FRAME" />
     <g v-for="i in steps" :key="i">
       <rect
         :x="frame.ix"
@@ -381,7 +384,7 @@ const spines = computed(() => {
 
   <!-- Flat platform where a staircase turns. -->
   <g v-else-if="kind === 'landing'">
-    <rect :x="frame.x" :y="frame.y" :width="frame.w" :height="frame.h" fill="#6e4a2c" />
+    <rect :x="frame.x" :y="frame.y" :width="frame.w" :height="frame.h" :fill="STAIR_FRAME" />
     <rect :x="frame.ix" :y="frame.iy" :width="frame.iw" :height="frame.ih" fill="#c79f6f" />
     <rect
       v-for="post in cornerPosts"
@@ -390,7 +393,7 @@ const spines = computed(() => {
       :y="post.y"
       width="5"
       height="5"
-      fill="#6e4a2c"
+      :fill="STAIR_FRAME"
     />
   </g>
 </template>

@@ -38,6 +38,32 @@ describe('App', () => {
     expect(container.querySelectorAll('.cross')).toHaveLength(0)
   })
 
+  it('highlights on the map what a pointed suspect clue names, until the pointer leaves', async () => {
+    const { container } = render(App)
+    const benoit = screen.getByRole('button', { name: /^Benoît/ })
+    await fireEvent.pointerEnter(benoit)
+    expect(container.querySelectorAll('.highlight--forced')).toHaveLength(1)
+    expect(container.querySelectorAll('.highlight--landmark')).toHaveLength(1)
+    await fireEvent.pointerLeave(benoit)
+    expect(container.querySelectorAll('.highlights > g')).toHaveLength(0)
+  })
+
+  it('highlights the clue of whoever stands under the mouse on the map', async () => {
+    const { container } = render(App)
+    await fireEvent.click(screen.getByRole('button', { name: /^Benoît/ }))
+    await fireEvent.click(cell(container, SOLUTION.benoit!))
+    expect(container.querySelectorAll('.highlights > g')).toHaveLength(0)
+    await fireEvent.pointerEnter(cell(container, SOLUTION.benoit!), { pointerType: 'mouse' })
+    expect(container.querySelectorAll('.highlight--forced')).toHaveLength(1)
+  })
+
+  it('rings the card of the person a pointed clue measures against', async () => {
+    render(App)
+    const thibault = screen.getByRole('button', { name: /^Thibault/ })
+    await fireEvent.pointerEnter(screen.getByRole('button', { name: /^Anthony/ }))
+    expect(thibault).toHaveClass('ring-landmark')
+  })
+
   it('takes no click on a cell nobody can stand on', () => {
     const { container } = render(App)
     expect(container.querySelector('[data-cell="A1"]')).toBeNull()

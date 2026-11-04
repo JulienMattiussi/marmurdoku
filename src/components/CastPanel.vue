@@ -9,6 +9,7 @@ import { GENERAL_CLUES } from '@/data/clues'
 import { PEOPLE } from '@/data/people'
 import { CROSS, type Mode } from '@/lib/game'
 import type { Cell } from '@/lib/grid'
+import type { PointedClue } from '@/lib/highlights'
 
 /**
  * The cast to place on the map, next to it, each with their clues. A click
@@ -20,6 +21,8 @@ defineProps<{
   placements: Record<string, Cell>
   /** Positions noted per suspect: their count shows on each card. */
   notes: Record<string, string[]>
+  /** The people the pointed clue measures against: their cards ring in blue. */
+  related: string[]
   mode: Mode
   /** "Vérifier" stays greyed out until everyone is on the map. */
   canVerify: boolean
@@ -36,6 +39,8 @@ const emit = defineEmits<{
   undo: []
   redo: []
   saves: []
+  /** The clue under the pointer or the keyboard focus, or none any more. */
+  point: [clue: PointedClue | null]
 }>()
 
 const showRules = ref(false)
@@ -70,7 +75,18 @@ const showRules = ref(false)
         </button>
       </div>
       <ul class="grid gap-x-6 text-[13px] leading-snug sm:grid-cols-2">
-        <li v-for="clue in GENERAL_CLUES" :key="clue.text">— {{ clue.text }}</li>
+        <li
+          v-for="(clue, index) in GENERAL_CLUES"
+          :key="clue.text"
+          tabindex="0"
+          class="focus-visible:outline-tape -mx-1 rounded-sm px-1 hover:bg-black/10 focus-visible:outline-2"
+          @pointerenter="emit('point', { general: index })"
+          @pointerleave="emit('point', null)"
+          @focus="emit('point', { general: index })"
+          @blur="emit('point', null)"
+        >
+          — {{ clue.text }}
+        </li>
       </ul>
     </section>
     <div class="flex items-center gap-4">
@@ -99,10 +115,15 @@ const showRules = ref(false)
         <SuspectCard
           :person="person"
           :pressed="active === person.id"
+          :related="related.includes(person.id)"
           :cell="placements[person.id]"
           :notes="notes[person.id]?.length ?? 0"
           @pick="emit('select', person.id)"
           @press="emit('press', person.id, $event)"
+          @pointerenter="emit('point', { person: person.id })"
+          @pointerleave="emit('point', null)"
+          @focus="emit('point', { person: person.id })"
+          @blur="emit('point', null)"
         />
       </li>
       <!-- In the cast's free slot: the cross tool, pressed whenever nobody is picked or dragged. -->

@@ -12,6 +12,8 @@ import type { Cell } from '@/lib/grid'
 const props = defineProps<{
   person: Person
   pressed: boolean
+  /** Named by the pointed clue ("above Thibault"). */
+  related: boolean
   cell?: Cell
   notes: number
 }>()
@@ -20,7 +22,12 @@ const gender = props.person.woman ? 'C’est une femme' : 'C’est un homme'
 </script>
 
 <template>
-  <CastCard :pressed="pressed" @pick="emit('pick')" @press="emit('press', $event)">
+  <CastCard
+    :pressed="pressed"
+    :class="{ 'ring-landmark ring-4': related && !pressed }"
+    @pick="emit('pick')"
+    @press="emit('press', $event)"
+  >
     <template #icon>
       <img
         :src="avatarUrl(person.id)"

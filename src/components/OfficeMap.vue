@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import CellLayer from '@/components/CellLayer.vue'
 import FloorPatterns from '@/components/FloorPatterns.vue'
+import HighlightLayer from '@/components/HighlightLayer.vue'
 import MapCoordinates from '@/components/MapCoordinates.vue'
 import MapPlan from '@/components/MapPlan.vue'
 import NotesLayer from '@/components/NotesLayer.vue'
@@ -14,12 +15,13 @@ import { placeableGrid } from '@/lib/furniture'
 import type { Tool } from '@/lib/game'
 import { CELL } from '@/lib/geometry'
 import { parseZoneGrid, type Cell } from '@/lib/grid'
+import type { Highlight } from '@/lib/highlights'
 import type { Frame } from '@/lib/reconstruction'
 import { groundLabels, tooltips } from '@/lib/tooltips'
 
 /**
- * The map as the page shows it: the plan, then the player's layers (notes,
- * people, crosses and click targets), or the reconstruction's still, seen
+ * The map as the page shows it: the plan, then the player's layers (the
+ * pointed clue's places, notes, people, crosses and click targets), or the reconstruction's still, seen
  * through its camera.
  */
 const props = defineProps<{
@@ -34,6 +36,8 @@ const props = defineProps<{
   effect: Tool
   hoverCell: Cell | null
   selectedCell: Cell | null
+  /** The places named by the pointed (or picked) clue. */
+  highlights: Highlight[]
   /** Debug: hatch the cells where nobody can stand. */
   showBlocked?: boolean
   /** The reconstruction's current still: it takes over the people, the camera and the bubbles. */
@@ -43,6 +47,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   cellClick: [cell: Cell]
   cellPress: [cell: Cell, event: PointerEvent]
+  /** The cell under the mouse, or none any more. */
+  cellPoint: [cell: Cell | null]
 }>()
 
 const zones = parseZoneGrid(ZONE_GRID, ZONES)
@@ -67,6 +73,10 @@ const cameraStyle = computed(() => {
  * row and column light up, and its letter and number.
  */
 const mouseCell = ref<Cell | null>(null)
+const onPoint = (cell: Cell | null) => {
+  mouseCell.value = cell
+  emit('cellPoint', cell)
+}
 const pointed = computed(() => (props.still ? null : (props.hoverCell ?? mouseCell.value)))
 
 const ground = groundLabels(zones, FURNITURE)
@@ -104,6 +114,7 @@ const cellLabels = computed(() => tooltips(ground, props.placements, nameOf))
             <rect :y="pointed.row * CELL" :width="size" :height="CELL" />
             <rect :x="pointed.col * CELL" :width="CELL" :height="size" />
           </g>
+          <HighlightLayer :highlights="highlights" />
           <NotesLayer :notes="notes" :placements="placements" :selected="selected" />
           <PeopleLayer :placements="placements" />
 
@@ -117,14 +128,19 @@ const cellLabels = computed(() => tooltips(ground, props.placements, nameOf))
             :effect="effect"
             @click="emit('cellClick', $event)"
             @press="(cell, event) => emit('cellPress', cell, event)"
-            @point="mouseCell = $event"
+            @point="onPoint"
           />
         </template>
       </g>
     </g>
 
     <rect x="-3" y="-3" :width="size + 6" :height="size + 6" class="frame" />
-    <MapCoordinates :cells="zones.length" :margin="MARGIN" :zoomed="!!still?.camera" :pointed="pointed" />
+    <MapCoordinates
+      :cells="zones.length"
+      :margin="MARGIN"
+      :zoomed="!!still?.camera"
+      :pointed="pointed"
+    />
   </svg>
 </template>
 

@@ -15,6 +15,7 @@ import { RECONSTRUCTION } from '@/data/reconstruction'
 import { CROSS, emptyGame } from '@/lib/game'
 import { timeline } from '@/lib/reconstruction'
 import type { Save } from '@/lib/saves'
+import { clueHints, type PointedClue } from '@/lib/highlights'
 import type { Cell } from '@/lib/grid'
 import { puzzleStatus } from '@/lib/solver'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
@@ -54,6 +55,24 @@ const selectedCell = computed(() =>
 /** A dragged suspect's card stays pressed during the drag, rather than the cross. */
 const activeCard = computed(() => drag.dragged.value?.item ?? game.selected.value ?? CROSS)
 
+/**
+ * The clue whose places the map highlights: the card or general clue under
+ * the pointer or the keyboard focus, else the dragged suspect's, else the
+ * one of whoever stands under the mouse on the map, else the picked
+ * suspect's (no hover on touch).
+ */
+const pointedClue = ref<PointedClue | null>(null)
+const mapCell = ref<Cell | null>(null)
+const hints = computed(() => {
+  const dragged = drag.dragged.value?.item
+  const onMap = mapCell.value && game.occupantOf(mapCell.value)
+  const person = [dragged, onMap, game.selected.value].find((id) => id && id !== CROSS)
+  const clue = pointedClue.value ?? (person ? { person } : null)
+  return clue
+    ? clueHints(clue, PUZZLE, game.state.value.placements)
+    : { highlights: [], people: [] }
+})
+
 const onCellClick = (cell: Cell) => {
   if (!drag.wasDragging()) game.click(cell)
 }
@@ -85,10 +104,12 @@ const onCross = () => {
         :effect="game.effect.value"
         :hover-cell="drag.hoverCell.value"
         :selected-cell="selectedCell"
+        :highlights="hints.highlights"
         :show-blocked="debug"
         :still="reconstruction.frame.value"
         @cell-click="onCellClick"
         @cell-press="onCellPress"
+        @cell-point="mapCell = $event"
       />
       <ReconstructionControls
         v-if="reconstruction.stage.value === 'playing'"
@@ -126,6 +147,7 @@ const onCross = () => {
         :active="activeCard"
         :placements="game.state.value.placements"
         :notes="game.state.value.notes"
+        :related="hints.people"
         :mode="game.mode.value"
         :can-verify="game.everyonePlaced.value && !game.over.value"
         :can-undo="game.canUndo.value"
@@ -138,6 +160,7 @@ const onCross = () => {
         @undo="game.undo"
         @redo="game.redo"
         @saves="showSaves = true"
+        @point="pointedClue = $event"
       />
     </div>
     <SavesDialog

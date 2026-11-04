@@ -53,6 +53,7 @@ src/
 │   ├── FloorPatterns.vue     # Motifs SVG des sols (un par FloorKind) et ombre portée
 │   ├── FurniturePiece.vue    # Place un meuble sur la grille, l'oriente, choisit son sprite
 │   ├── PeopleLayer.vue       # Avatars sur leurs cases, halo blanc qui suit leur contour ; marches et effets de la reconstitution
+│   ├── HighlightLayer.vue    # Ce que nomme l'indice pointé : pièces et lignes encadrées, meubles surlignés
 │   ├── NotesLayer.vue        # Positions notées : initiale sur la couleur du suspect, 3x3 par case
 │   ├── CellLayer.vue         # Couche du joueur : croix, survol, sélection, infobulle, cibles de clic et de dépôt (data-cell)
 │   ├── ReconstructionLayer.vue # Reconstitution : bulles, zzz, notes
@@ -93,6 +94,7 @@ src/
 │   ├── history.ts            # Annuler / refaire sur des états immuables
 │   ├── saves.ts              # Liste des sauvegardes : ajout, retrait, lecture tolérante
 │   ├── reconstruction.ts     # Script de la reconstitution en suite d'images : caméra, positions, bulles
+│   ├── highlights.ts         # Ce que nomme un indice sur la carte : imposé, interdit ou repère
 │   ├── tooltips.ts           # Texte des infobulles : qui se tient sur la case, meubles
 │   └── geometry.ts           # Taille d'une case, coordonnées de la carte (« B3 ») dans les deux sens
 ├── puzzle.ts                 # Le niveau assemblé depuis data/ (plateau, personnages, indices, solution)
@@ -171,6 +173,20 @@ tests/
   (`OfficeMap.vue`). Au doigt, seulement pendant un glisser.
 - Survol d'une case pendant une seconde : une infobulle nomme qui s'y tient
   et les meubles qui s'y trouvent (libellés de `FURNITURE_KINDS`).
+- **Indices sur la carte** : survol ou focus d'une fiche (ou d'une ligne du
+  rapport d'enquête), sinon le personnage glissé, celui qui se tient sous
+  la souris sur la carte, ou le sélectionné : la carte
+  montre ce que nomment ses indices (`lib/highlights.ts`). Pièces et lignes
+  encadrées, meubles surlignés ; vert imposé, rouge interdit (et en
+  pointillés), bleu pour un repère (tout « à côté de », et « plus proche
+  de »). « Dans le coin d'une zone » remplit
+  les coins des pièces ; un indice qui choisit ses cases deux fois (« sur
+  une chaise, dans le coin d'une zone ») ne remplit que celles qui
+  respectent les deux. La personne à laquelle un indice se
+  mesure (« au-dessus de Thibault », « à 3 colonnes de Julio ») passe en
+  bleu : sa fiche, et sa case si elle est placée. « Seul », « avec deux
+  femmes » ou « loin des murs » ne montrent rien : le jeu ne résout
+  rien pour le joueur.
 - Seules les cases plaçables acceptent clics et dépôts. La logique est pure
   (`lib/game.ts`, testée) ; le glisser passe par les événements pointeur.
 - **Mode Placer / Noter** (`GameToolbar.vue`) : en mode Noter, un clic note

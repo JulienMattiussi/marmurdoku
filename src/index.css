@@ -20,6 +20,8 @@
   --color-blood-dark: #5e0910;
   --color-tape: #f2c418;
   --color-wall: #2c2427;
+  /* What a pointed clue measures against, on the map and on the cards (HighlightLayer.vue). */
+  --color-landmark: #2b7bd6;
   --font-horror: 'Creepster', cursive;
   --font-sans: 'Special Elite', ui-monospace, monospace;
 }

@@ -123,6 +123,15 @@ describe('Règles', () => {
   })
 })
 
+describe('Cast', () => {
+  it('tells women from men on the cards, in words on hover', () => {
+    render(App)
+    expect(screen.getAllByRole('img', { name: 'C’est une femme' })).toHaveLength(4)
+    expect(screen.getAllByRole('img', { name: 'C’est un homme' })).toHaveLength(16)
+    expect(screen.getAllByTitle('C’est une femme')).toHaveLength(4)
+  })
+})
+
 describe('Tooltip', () => {
   it('names what stands on a cell after a second of hovering', async () => {
     vi.useFakeTimers()

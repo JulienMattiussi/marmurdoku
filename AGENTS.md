@@ -62,7 +62,7 @@ src/
 │   ├── BloodDrip.vue         # Coulure de sang sous le titre
 │   ├── CastPanel.vue         # Rapport d'enquête, « Les suspects », barre d'outils et fiches
 │   ├── CastCard.vue          # Fiche du panneau : clic pour choisir, appui pour glisser
-│   ├── SuspectCard.vue       # Fiche d'un suspect : avatar, nom sur sa couleur, indices, case ou nombre de notes
+│   ├── SuspectCard.vue       # Fiche d'un suspect : avatar, nom sur sa couleur, ♀ / ♂, indices, case ou nombre de notes
 │   ├── GameToolbar.vue       # Vérifier, Placer / Noter, annuler / refaire, Sauvegardes
 │   ├── DragGhost.vue         # Ce qui suit le pointeur pendant un glisser : l'avatar ou la croix
 │   ├── CrossIcon.vue         # La croix de la fiche Croix et de son glisser
@@ -184,6 +184,9 @@ tests/
   Placer quelqu'un efface les notes des autres sur sa ligne et sa colonne,
   dans le même coup (non désactivable).
   Une croix efface toutes les notes de sa case, dans le même coup.
+- **Femme ou homme** : un ♀ ou un ♂ suit le nom sur chaque fiche, « C'est
+  une femme » / « C'est un homme » au survol (`woman` dans `data/people.ts`).
+  L'indice de Maxime compte des femmes : ne pas laisser le prénom en décider.
 - **Croix** : une fiche de plus, dans la case libre après les 20 suspects
   (`CastPanel.vue`). Elle est enfoncée dès que personne n'est sélectionné
   (après un placement, par exemple) ; cliquer dessus désélectionne. Elle se

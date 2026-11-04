@@ -9,13 +9,14 @@ import type { Cell } from '@/lib/grid'
  * A suspect's card: avatar, name on their color, clues. Once placed, the card
  * greys out and shows the cell; before, how many positions are noted.
  */
-defineProps<{
+const props = defineProps<{
   person: Person
   pressed: boolean
   cell?: Cell
   notes: number
 }>()
 const emit = defineEmits<{ pick: []; press: [event: PointerEvent] }>()
+const gender = props.person.woman ? 'C’est une femme' : 'C’est un homme'
 </script>
 
 <template>
@@ -37,6 +38,28 @@ const emit = defineEmits<{ pick: []; press: [event: PointerEvent] }>()
         :style="{ backgroundColor: colorOf(person.id), color: inkOn(person.id) }"
         >{{ person.name }}</span
       >
+      <!-- Some clues count women: never leave it to the first name. -->
+      <svg
+        role="img"
+        :aria-label="gender"
+        viewBox="0 0 24 24"
+        class="ml-1 inline-block size-[1.35em] cursor-help align-[-0.35em]"
+        :class="{ 'opacity-50': cell }"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.6"
+        stroke-linecap="round"
+      >
+        <title>{{ gender }}</title>
+        <template v-if="person.woman">
+          <circle cx="12" cy="9" r="5.5" />
+          <path d="M12 14.5v7.5M8.5 18.5h7" />
+        </template>
+        <template v-else>
+          <circle cx="10" cy="14" r="5.5" />
+          <path d="M14 10l6.5-6.5M15 3.5h5.5V9" stroke-linejoin="round" />
+        </template>
+      </svg>
       <span
         v-if="!cell && notes"
         class="ml-1 text-xs font-normal"

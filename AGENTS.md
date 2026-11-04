@@ -209,9 +209,13 @@ tests/
   glisse aussi vers une case, comme un personnage : la croix remplace ce que
   la case contenait.
 - **Croix automatiques** : placer quelqu'un barre aussi les cases
-  plaçables libres de sa ligne et de sa colonne, dans le même coup. Ce sont
-  des croix ordinaires : le joueur les retire comme les siennes, et elles
-  restent si la personne est déplacée ou retirée.
+  plaçables libres de sa ligne et de sa colonne, dans le même coup. Rien ne
+  les distingue à l'écran ; l'état les retient (`autoCrosses`) pour les
+  retirer quand plus personne ne se tient sur leur ligne ou leur colonne
+  (personne déplacée ou retirée). Celles du joueur restent. Le joueur retire
+  une croix automatique comme les siennes, et une croix qu'il pose sur la
+  case devient la sienne. Les sauvegardes d'avant tiennent toutes leurs
+  croix pour celles du joueur.
 - **Curseur sur la grille** : il dit aussi ce que fera le clic : crayon plein
   pour placer, crayon en pointillés pour noter, croix rouge pour barrer.
 - **Annuler / refaire** : un seul historique pour tous les coups (placements,

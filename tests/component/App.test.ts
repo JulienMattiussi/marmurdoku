@@ -13,7 +13,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Marmurdoku')
   })
 
-  it('places the picked person on a clicked cell, crossing out their row and column, and a second click crosses them out', async () => {
+  it('places the picked person on a clicked cell, crossing out their row and column, and a second click crosses them out, their line’s crosses gone', async () => {
     const { container } = render(App)
     const crosses = () => container.querySelectorAll('.cross').length
     const karen = screen.getByRole('button', { name: /^Karen/ })
@@ -27,7 +27,8 @@ describe('App', () => {
     expect(lineCrosses).toBeGreaterThan(10)
     await fireEvent.click(cell(container, 'S8'))
     expect(avatarsOnMap(container)).toEqual([])
-    expect(crosses()).toBe(lineCrosses + 1)
+    // Crossed out, she takes her line's crosses with her.
+    expect(crosses()).toBe(1)
   })
 
   it('crosses out a cell when nobody is picked', async () => {

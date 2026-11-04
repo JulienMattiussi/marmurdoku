@@ -3,6 +3,8 @@ import { record, redo, startHistory, undo } from '@/lib/history'
 import { addSave, defaultName, parseSaves, removeSave } from '@/lib/saves'
 import { PUZZLE, SOLUTION_PLACEMENTS } from '@/puzzle'
 
+const sorted = (names: string[]) => [...names].sort()
+
 const A1 = { row: 0, col: 0 }
 const B2 = { row: 1, col: 1 }
 
@@ -59,8 +61,45 @@ describe('placing', () => {
     const state = clickCell(start, A1, 'karen', 'place', placeable)
     expect(state.crosses).toEqual(['B1', 'A2', 'A3'])
     expect(clickCell(state, { row: 0, col: 1 }, null).crosses).toEqual(['A2', 'A3'])
-    expect(clickCell(state, A1, 'karen').crosses).toEqual(['B1', 'A2', 'A3'])
     expect(dropOn(start, 'karen', A1, placeable).crosses).toEqual(['B1', 'A2', 'A3'])
+  })
+
+  it('takes the automatic crosses off with the person, but those still on someone’s line and the player’s own', () => {
+    const placeable = [
+      [true, true, true],
+      [true, true, true],
+      [true, true, true],
+    ]
+    const C1 = { row: 0, col: 2 }
+    const A3 = { row: 2, col: 0 }
+    let state = clickCell(emptyGame(), C1, 'julio', 'place', placeable)
+    state = clickCell(state, A3, null)
+    state = clickCell(state, A1, 'karen', 'place', placeable)
+    expect(sorted(state.crosses)).toEqual(['A2', 'A3', 'B1', 'C2', 'C3'])
+    // Karen leaves: B1 stays on Julio's row, A3 is the player's.
+    expect(sorted(clickCell(state, A1, 'karen').crosses)).toEqual(['A3', 'B1', 'C2', 'C3'])
+    // She moves to B2: her new line gets crossed out (A2 again, B3).
+    expect(sorted(clickCell(state, B2, 'karen', 'place', placeable).crosses)).toEqual([
+      'A2',
+      'A3',
+      'B1',
+      'B3',
+      'C2',
+      'C3',
+    ])
+  })
+
+  it('makes a cleared or crossed-over automatic cross the player’s', () => {
+    const placeable = [
+      [true, true],
+      [true, true],
+    ]
+    let state = clickCell(emptyGame(), A1, 'karen', 'place', placeable)
+    expect(state.autoCrosses).toEqual(['B1', 'A2'])
+    state = clickCell(state, { row: 0, col: 1 }, null)
+    state = dropOn(state, CROSS, { row: 1, col: 0 })
+    expect(state.autoCrosses).toEqual([])
+    expect(clickCell(state, A1, 'karen').crosses).toEqual(['A2'])
   })
 
   it('clears the other suspects’ notes on the same row and column, in one move', () => {
@@ -95,6 +134,14 @@ describe('dropOn', () => {
     expect(state.placements).toEqual({})
     expect(state.crosses).toEqual(['A1', 'B2'])
     expect(state.notes).toEqual({ julio: [] })
+  })
+})
+
+describe('parseSaves', () => {
+  it('reads a save from before automatic crosses, every cross as the player’s', () => {
+    const old = { placements: {}, crosses: ['A1'], notes: {} }
+    const [save] = parseSaves(JSON.stringify([{ id: '1', name: 'Vieille', at: 0, state: old }]))
+    expect(save?.state).toEqual({ ...old, autoCrosses: [] })
   })
 })
 

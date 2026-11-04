@@ -1,4 +1,4 @@
-import { cellName } from '@/lib/geometry'
+import { cellName, parseCellName } from '@/lib/geometry'
 import type { Cell } from '@/lib/grid'
 import type { Placements } from '@/lib/rules'
 import { brokenClues, type ClueRef, type Puzzle } from '@/lib/solver'
@@ -10,8 +10,14 @@ import { brokenClues, type ClueRef, type Puzzle } from '@/lib/solver'
  */
 export interface GameState {
   placements: Placements
-  /** Cells the player ruled out, by map coordinate ("B3"). */
+  /** Cells ruled out, by map coordinate ("B3"): by the player, or by a placement. */
   crosses: string[]
+  /**
+   * The crosses a placement put on its row and column, among `crosses`: they
+   * go when nobody stands on their line any more. A cross the player puts
+   * (or puts back) is theirs, and stays.
+   */
+  autoCrosses: string[]
   /** Positions the player noted as possible, per suspect, by map coordinate. */
   notes: Record<string, string[]>
 }
@@ -22,32 +28,51 @@ export const CROSS = 'cross'
 /** Placing on a cell, or noting it for the picked suspect. */
 export type Mode = 'place' | 'note'
 
-export const emptyGame = (): GameState => ({ placements: {}, crosses: [], notes: {} })
+export const emptyGame = (): GameState => ({
+  placements: {},
+  crosses: [],
+  autoCrosses: [],
+  notes: {},
+})
 
 const personAt = (state: GameState, cell: Cell) =>
   Object.keys(state.placements).find((id) => cellName(state.placements[id]!) === cellName(cell))
+
+const sameLine = (a: Cell, b: Cell) => a.row === b.row || a.col === b.col
+
+/** Without these crosses, automatic or not. */
+const uncross = (state: GameState, names: string[]): GameState => ({
+  ...state,
+  crosses: state.crosses.filter((name) => !names.includes(name)),
+  autoCrosses: state.autoCrosses.filter((name) => !names.includes(name)),
+})
+
+/** New placements: the automatic crosses left on nobody's line go. */
+const withPlacements = (state: GameState, placements: Placements): GameState => {
+  const placed = Object.values(placements)
+  const stale = state.autoCrosses.filter(
+    (name) => !placed.some((cell) => sameLine(cell, parseCellName(name))),
+  )
+  return uncross({ ...state, placements }, stale)
+}
 
 /**
  * Puts a person on a cell, moving them if already placed and freeing the cell
  * first. Nobody else can stand on that row and column any more: the other
  * suspects' notes there go, and its free `placeable` cells get crossed out,
- * crosses the player can then clear like any other. All of it is one move
- * for undo.
+ * automatic crosses the player can clear like any other, and that go when
+ * the person leaves the line. All of it is one move for undo.
  */
 const put = (state: GameState, person: string, cell: Cell, placeable: boolean[][]): GameState => {
   const placements = { ...state.placements }
   const occupant = personAt(state, cell)
   if (occupant) delete placements[occupant]
   placements[person] = cell
-  const sameLine = (name: string) => {
-    const col = name.charCodeAt(0) - 65
-    const row = Number(name.slice(1)) - 1
-    return row === cell.row || col === cell.col
-  }
+  const moved = withPlacements(state, placements)
   const notes = Object.fromEntries(
     Object.entries(state.notes).map(([id, names]) => [
       id,
-      id === person ? names : names.filter((name) => !sameLine(name)),
+      id === person ? names : names.filter((name) => !sameLine(cell, parseCellName(name))),
     ]),
   )
   const lineCells = placeable.flatMap((cells, row) =>
@@ -58,19 +83,32 @@ const put = (state: GameState, person: string, cell: Cell, placeable: boolean[][
   const added = lineCells
     .filter((other) => !Object.values(placements).some((p) => cellName(p) === cellName(other)))
     .map(cellName)
-  const crosses = [...new Set([...state.crosses, ...added])]
-  return { placements, crosses: crosses.filter((name) => name !== cellName(cell)), notes }
+    .filter((name) => !moved.crosses.includes(name))
+  return uncross(
+    {
+      placements,
+      crosses: [...moved.crosses, ...added],
+      autoCrosses: [...moved.autoCrosses, ...added],
+      notes,
+    },
+    [cellName(cell)],
+  )
 }
 
-/** Crosses a cell out over whoever stood there; a cross rules the cell out for everyone, so its notes go too. */
+/**
+ * Crosses a cell out over whoever stood there; a cross rules the cell out for
+ * everyone, so its notes go too.
+ */
 const crossOut = (state: GameState, cell: Cell): GameState => {
   const name = cellName(cell)
   const placements = { ...state.placements }
   const occupant = personAt(state, cell)
   if (occupant) delete placements[occupant]
+  // The player's own cross now, even over an automatic one.
+  const cleared = uncross(withPlacements(state, placements), [name])
   return {
-    placements,
-    crosses: state.crosses.includes(name) ? state.crosses : [...state.crosses, name],
+    ...cleared,
+    crosses: [...cleared.crosses, name],
     notes: Object.fromEntries(
       Object.entries(state.notes).map(([id, names]) => [id, names.filter((n) => n !== name)]),
     ),
@@ -108,11 +146,9 @@ export const clickCell = (
     if (personAt(state, cell) !== selected) return put(state, selected, cell, placeable)
     const placements = { ...state.placements }
     delete placements[selected]
-    return { ...state, placements }
+    return withPlacements(state, placements)
   }
-  if (state.crosses.includes(name)) {
-    return { ...state, crosses: state.crosses.filter((other) => other !== name) }
-  }
+  if (state.crosses.includes(name)) return uncross(state, [name])
   return crossOut(state, cell)
 }
 

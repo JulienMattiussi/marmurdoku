@@ -37,13 +37,19 @@ export const parseSaves = (json: string | null): Save[] => {
   try {
     const value: unknown = JSON.parse(json)
     if (!Array.isArray(value)) return []
-    return value.filter(
-      (save): save is Save =>
-        typeof save?.id === 'string' &&
-        typeof save?.name === 'string' &&
-        typeof save?.at === 'number' &&
-        isState(save?.state),
-    )
+    return value
+      .filter(
+        (save): save is Save =>
+          typeof save?.id === 'string' &&
+          typeof save?.name === 'string' &&
+          typeof save?.at === 'number' &&
+          isState(save?.state),
+      )
+      .map((save) => ({
+        ...save,
+        // Saved before automatic crosses were told apart: all of them stay, as the player's.
+        state: { ...save.state, autoCrosses: save.state.autoCrosses ?? [] },
+      }))
   } catch {
     return []
   }
